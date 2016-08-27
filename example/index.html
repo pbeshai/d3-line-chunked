@@ -26,7 +26,7 @@
 var transitionDuration = 1000;
 
 // shared chart properties
-var x, y, xAxis, yAxis, color, svg, line, width, height;
+var x, y, xAxis, yAxis, svg, line, lineWithDefined, width, height;
 var lineColor = '#0bb';
 
 /* eslint-disable */
@@ -51,10 +51,9 @@ function generateRandom(length) {
 function setupChart(data) {
   var margin = {top: 20, right: 30, bottom: 0, left: 20};
   width = 800 - margin.left - margin.right;
-  height = 600 - margin.top - margin.bottom;
-
-  color = d3.scaleSequential(d3.interpolateMagma)
-    .domain(d3.extent(data, d => d.v));
+  height = 450 - margin.top - margin.bottom;
+  var numGroups = 3;
+  var groupHeight = height / numGroups;
 
   x = d3
       .scaleLinear()
@@ -64,8 +63,7 @@ function setupChart(data) {
   y = d3
       .scaleLinear()
       .domain(d3.extent(data, d => d.y))
-      .range([0.5 * height / 4, 0]);
-
+      .range([0.5 * groupHeight, 0]);
 
   svg = d3.select('.chart-container').append('svg')
       .attr('width', width + margin.left + margin.right)
@@ -78,20 +76,34 @@ function setupChart(data) {
       .x((d) => x(d.x))
       .y((d) => y(d.y));
 
+  lineWithDefined = d3.line()
+      .curve(d3.curveLinear)
+      .x((d) => x(d.x))
+      .y((d) => y(d.y))
+      .defined(d => d.y != null);
+
   svg.append('g')
       .attr('class', 'ref-lines');
 
   svg.append('g')
       .attr('class', 'basic-line')
       .append('text')
-        .text('Basic Line')
+        .text('d3.line')
+        .attr('dy', -8);
+
+  svg.append('g')
+      .attr('class', 'basic-line-defined')
+      .attr('transform', 'translate(0 ' + (groupHeight) + ')')
+      .append('text')
+        .text('d3.line with defined()')
         .attr('dy', -8);
 
   svg.append('g')
     .attr('class', 'chunked-line')
-    .attr('transform', 'translate(0,' + (height / 4) + ')')
+    .attr('transform', 'translate(0 ' + (2 * groupHeight) + ')')
     .append('text')
-        .text('Many <path>s')
+        .text('d3-line-chunked')
+        .style('font-weight', 'bold')
         .attr('dy', -8);
 
   d3.select('.chart-container').append('button')
@@ -114,8 +126,7 @@ function renderChunkedLine(lineData, root) {
     .gapStyles({
       'stroke-dasharray': '4 4',
       'stroke-opacity': 0.2,
-    })
-    .transitionInitial(false);
+    });
 
   root
     .datum(lineData)
@@ -124,9 +135,7 @@ function renderChunkedLine(lineData, root) {
     .call(lineChunked);
 }
 
-function renderBasicLine(newData, root) {
-  const filteredData = newData.filter(d => d.y != null);
-
+function renderBasicLine(newData, root, line, showPoints) {
   // render basic line
   let basicLine = root.select('path');
 
@@ -142,24 +151,28 @@ function renderBasicLine(newData, root) {
       .transition()
       .duration(transitionDuration)
       .style('opacity', 1)
-      .attr('d', line(filteredData));
+      .attr('d', line(newData));
 
-  const circleBinding = root.selectAll('circle').data(filteredData);
+  if (showPoints) {
+    const filteredData = newData.filter(d => d.y != null);
 
-  const circleEntering = circleBinding.enter()
-    .append('circle')
-    .attr('cx', d => x(d.x))
-    .attr('cy', d => y(d.y));
+    const circleBinding = root.selectAll('circle').data(filteredData);
 
-  circleBinding.merge(circleEntering)
-    .style('fill', lineColor)
-    .transition()
-    .duration(transitionDuration)
-    .attr('r', 3.5)
-    .attr('cx', d => x(d.x))
-    .attr('cy', d => y(d.y));
+    const circleEntering = circleBinding.enter()
+      .append('circle')
+      .attr('cx', d => x(d.x))
+      .attr('cy', d => y(d.y));
 
-  circleBinding.exit().remove();
+    circleBinding.merge(circleEntering)
+      .style('fill', lineColor)
+      .transition()
+      .duration(transitionDuration)
+      .attr('r', 3.5)
+      .attr('cx', d => x(d.x))
+      .attr('cy', d => y(d.y));
+
+    circleBinding.exit().remove();
+  }
 }
 
 function renderRefLines(newData, root) {
@@ -194,9 +207,12 @@ function updateChart(newData) {
   const gRefLines = svg.select('.ref-lines');
   renderRefLines(newData, gRefLines);
 
+  const filteredData = newData.filter(d => d.y != null);
 
   const gBasicLine = svg.select('.basic-line');
-  renderBasicLine(newData, gBasicLine);
+  renderBasicLine(filteredData, gBasicLine, line, true);
+  const gBasicLineDefined = svg.select('.basic-line-defined');
+  renderBasicLine(newData, gBasicLineDefined, lineWithDefined);
 
   const gChunkedLine = svg.select('.chunked-line');
   renderChunkedLine(newData, gChunkedLine);
