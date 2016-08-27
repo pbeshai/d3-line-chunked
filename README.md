@@ -1,12 +1,33 @@
 # d3-line-chunked
 
-## Very experimental. Not yet ready for use.
+[![npm version](https://badge.fury.io/js/d3-line-chunked.svg)](https://badge.fury.io/js/d3-line-chunked)
+
+A d3 plugin that renders a line with potential gaps in the data by styling the gaps differently
+from the defined areas. Single points are rendered as circles. Transitions are supported.
 
 Demo: http://peterbeshai.com/vis/d3-line-chunked/
 
+![d3-line-chunked demo](http://peterbeshai.com/vis/d3-line-chunked/d3-line-chunked-demo.gif)
+
 ## Example Usage
 
-*TODO*
+```js
+var lineChunked = d3.lineChunked()
+  .x(d => x(d.x))
+  .y(d => y(d.y))
+  .curve(d3.curveLinear)
+  .defined(d => d.y != null)
+  .lineStyles({
+    stroke: '#0bb',
+  });
+
+d3.select('svg')
+  .append('g')
+    .datum(lineData)
+    .transition()
+    .duration(1000)
+    .call(lineChunked);
+```
 
 ## Development
 
@@ -28,12 +49,10 @@ Go to http://localhost:8000
 
 ## Installing
 
-*Eventually you can do this, not yet!*
-
 If you use NPM, `npm install d3-line-chunked`. Otherwise, download the [latest release](https://github.com/pbeshai/d3-line-chunked/releases/latest).
 
 ## API Reference
 
-*This will eventually be filled in.*
+*This will eventually be filled in. For now, see the source code.*
 
 <a href="#lineChunked" name="lineChunked">#</a> <b>lineChunked</b>()

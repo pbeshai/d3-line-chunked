@@ -34,7 +34,7 @@ function generateRandom(length) {
   var xRandomizer = d3.randomNormal(150, 150);
   var yRandomizer = d3.randomLogNormal(3, 1.2);
   var vRandomizer = d3.randomNormal(150, 50);
-  var missingChance = 0.3;
+  var missingChance = 0.8;
 
   return d3.range(length).map(i => ({
     x: i,
@@ -122,10 +122,6 @@ function renderChunkedLine(lineData, root) {
     .defined(d => d.y != null)
     .lineStyles({
       stroke: '#0bb',
-    })
-    .gapStyles({
-      'stroke-dasharray': '4 4',
-      'stroke-opacity': 0.2,
     });
 
   root
