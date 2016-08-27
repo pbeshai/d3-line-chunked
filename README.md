@@ -72,7 +72,7 @@ Constructs a new generator for chunked lines with the default settings.
 <a href="#_lineChunked" name="_lineChunked">#</a> *lineChunked*(*context*)
 
 Render the chunked line to the given *context*, which may be either a [d3 selection](https://github.com/d3/d3-selection)
-of SVG containers (either SVG or G elements) or a corresponding [d3 transition](https://github.com/d3/d3-transition).
+of SVG containers (either SVG or G elements) or a corresponding [d3 transition](https://github.com/d3/d3-transition). Reads the data for the line from the `datum` property on the  container.
 
 
 <a href="#lineChunked_x" name="lineChunked_x">#</a> *lineChunked*.**x**([*x*])
