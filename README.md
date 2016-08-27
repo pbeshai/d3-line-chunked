@@ -51,6 +51,17 @@ Go to http://localhost:8000
 
 If you use NPM, `npm install d3-line-chunked`. Otherwise, download the [latest release](https://github.com/pbeshai/d3-line-chunked/releases/latest).
 
+Note that this project relies on the following d3 features and plugins:
+- [d3-array](https://github.com/d3/d3-array)
+- [d3-selection](https://github.com/d3/d3-selection)
+- [d3-shape](https://github.com/d3/d3-interpolate)
+
+If you are using transitions, you will also need:
+- [d3-interpolate](https://github.com/d3/d3-interpolate)
+- [d3-interpolate-path](https://github.com/pbeshai/d3-interpolate-path) (plugin)
+
+The only thing not included in the default d3 v4 build is the plugin [d3-interpolate-path](https://github.com/pbeshai/d3-interpolate-path). You'll need to get that [separately](https://github.com/pbeshai/d3-interpolate-path#installing).
+
 ## API Reference
 
 <a href="#lineChunked" name="lineChunked">#</a> d3.**lineChunked**()
