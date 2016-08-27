@@ -13,10 +13,10 @@ Demo: http://peterbeshai.com/vis/d3-line-chunked/
 
 ```js
 var lineChunked = d3.lineChunked()
-  .x(d => x(d.x))
-  .y(d => y(d.y))
+  .x(function (d) { return x(d.x); })
+  .y(function (d) { return y(d.y); })
   .curve(d3.curveLinear)
-  .defined(d => d.y != null)
+  .defined(function (d) { return d.y != null; })
   .lineStyles({
     stroke: '#0bb',
   });
