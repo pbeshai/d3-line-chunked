@@ -1,27 +1,13 @@
-/*
-
-TODO
-
-- refactor renderPoints and renderPaths
-- refactor computeSegments and gapsAndSegments
-- use attrs for defaults
-- add styling support to points
-- write tests
-
-
-*/
-
+import { extent } from 'd3-array';
 import { select } from 'd3-selection';
 import { curveLinear, line as d3Line } from 'd3-shape';
 import { interpolatePath } from 'd3-interpolate-path'; // only needed if using transitions
-/**
- * Renders line with potential gaps in data as a series of <path> segments
- * segments and gaps can be styled separately
- * points (segments of length 1) can be styled separately
- *
- * transitions supported.
- */
 
+/**
+ * Helper function to compute the contiguous segments of the data
+ * @param {Array} lineData the line data
+ * @return {Array} An array of segments (subarrays) of the line data
+ */
 function computeSegments(lineData) {
   let startNewSegment = true;
 
@@ -65,34 +51,19 @@ function computeSegments(lineData) {
   return segments;
 }
 
-
-function gapsAndSegments(segments) {
-  // TODO: handle start and end gaps
-
-  const combined = [];
-  for (let i = 0; i < segments.length - 1; i++) {
-    const currSegment = segments[i];
-    const nextSegment = segments[i + 1];
-
-    const gap = [currSegment[currSegment.length - 1], nextSegment[0]];
-    combined.push({ type: 'segment', data: currSegment });
-    combined.push({ type: 'gap', data: gap });
-  }
-  combined.push({ type: 'segment', data: segments[segments.length - 1] });
-
-  return combined;
-}
-
+/**
+ * Renders line with potential gaps in the data by styling the gaps differently
+ * from the defined areas. Single points are rendered as circles. Transitions are
+ * supported.
+ */
 export default function () {
   const defaultLineAttrs = {
-    class: 'chunk-segment',
     fill: 'none',
     stroke: '#222',
-    'stroke-width': '1.5px',
+    'stroke-width': 1.5,
     'stroke-opacity': 1,
   };
   const defaultGapAttrs = {
-    class: 'chunk-gap',
     'stroke-dasharray': '2 2',
     'stroke-opacity': 0.2,
   };
@@ -113,11 +84,12 @@ export default function () {
   let gapAttrs = defaultGapAttrs;
   let pointStyles = {};
   let pointAttrs = defaultPointAttrs;
+  let transitionInitial = true;
 
   /**
    * Render the points for when segments have length 1.
    */
-  function renderCircles(context, selection, points) {
+  function renderCircles(initialRender, context, selection, points) {
     let circles = selection.selectAll('circle').data(points, d => d.id);
 
     // EXIT
@@ -139,7 +111,7 @@ export default function () {
     // apply user-provided attrs, using attributes from current line if not provided
     const combinedAttrs = Object.assign({
       fill: lineAttrs.stroke,
-      r: lineAttrs['stroke-width'],
+      r: lineAttrs['stroke-width'] == null ? undefined : parseFloat(lineAttrs['stroke-width']) + 1,
     }, pointAttrs);
     Object.keys(combinedAttrs).forEach(key => {
       circlesEnter.attr(key, combinedAttrs[key]);
@@ -161,7 +133,7 @@ export default function () {
 
 
     // handle with transition
-    if (context !== selection) {
+    if ((!initialRender || (initialRender && transitionInitial)) && context !== selection) {
       const duration = context.duration();
       const enterDuration = duration * 0.15;
       // delay sizing up the radius until after the line transition
@@ -185,61 +157,111 @@ export default function () {
   }
 
   /**
-   * Helper function to merge objects defining attributes or styles
-   * for lines and gaps.
-   * @param {Object} paths d3 selection of paths to apply to
-   * @param {String} type `attr` or `style` - how to apply these
-   * @param {Object} line
-   * @param {Object} gap
-   * @return {Object} The merged object that switches based on d.type
-   */
-  function mergeAndApply(paths, type, lineObj, gapObj) {
-    // apply user-provided styles
-    const lineKeys = Object.keys(lineObj);
-    const gapKeys = Object.keys(gapObj);
-    const combinedKeys = lineKeys.concat(gapKeys.filter(key => !lineKeys.includes(key)));
-
-    combinedKeys.forEach(key => {
-      const lineValue = lineObj[key];
-      const gapValue = gapObj[key] == null ? lineValue : gapObj[key];
-
-      paths[type](key, d => (d.type === 'segment' ? lineValue : gapValue));
-    });
-  }
-
-  /**
    * Render the paths for segments and gaps
    */
-  function renderPaths(context, selection, segmentsAndGaps) {
-    let paths = selection.selectAll('path').data(segmentsAndGaps);
+  function renderPaths(initialRender, context, selection, lineData, segments, [yMin, yMax]) {
+    let definedPath = selection.select('.d3-line-chunked-defined');
+    let undefinedPath = selection.select('.d3-line-chunked-undefined');
 
-    // EXIT
-    paths.exit().remove();
+    const clipPathId = 'my-clip-path'; // TODO: dynamic
+    let clipPath = selection.select('clipPath');
 
-    // ENTER
-    paths = paths.merge(paths.enter().append('path'));
+    // main line function
+    const line = d3Line().x(x).y(y).curve(curve);
 
-    // ENTER + UPDATE - paths
+    // initial render
+    if (definedPath.empty()) {
+      definedPath = selection.append('path');
+      undefinedPath = selection.append('path');
+      clipPath = selection.append('defs')
+        .append('clipPath')
+        .attr('id', clipPathId);
+    }
+
+    definedPath.attr('clip-path', `url(#${clipPathId})`);
+
+    // update attached data
+    definedPath.datum(lineData);
+    undefinedPath.datum(lineData);
+    let clipPathRects = clipPath.selectAll('rect').data(segments);
+
+
+    // set up the clipping paths
+    clipPathRects.exit().remove();
+    const clipPathRectsEnter = clipPathRects.enter().append('rect')
+      .attr('x', d => x(d[0]))
+      .attr('y', yMin)
+      .attr('width', 0)
+      .attr('height', yMax);
+
+    // on initial load, have the width already at max and the line already at full width
+    if (initialRender) {
+      clipPathRectsEnter
+        .attr('width', d => x(d[d.length - 1]) - x(d[0]));
+
+      // have the line load in with a flat y value
+      let initialLine = line;
+      if (transitionInitial) {
+        initialLine = d3Line().x(x).y(yMax).curve(curve);
+      }
+      definedPath.attr('d', initialLine);
+      undefinedPath.attr('d', initialLine);
+    }
+
+
     // apply user-provided attrs and styles
-    mergeAndApply(paths, 'attr', lineAttrs, gapAttrs);
-    mergeAndApply(paths, 'style', lineStyles, gapStyles);
+    Object.keys(lineAttrs).forEach(key => {
+      definedPath.attr(key, lineAttrs[key]);
+      undefinedPath.attr(key, lineAttrs[key]);
+    });
+    Object.keys(lineStyles).forEach(key => {
+      definedPath.style(key, lineStyles[key]);
+      undefinedPath.style(key, lineStyles[key]);
+    });
+    definedPath.classed('d3-line-chunked-defined', true);
+
+    // overwrite with gap styles and attributes
+    Object.keys(gapAttrs).forEach(key => {
+      undefinedPath.attr(key, gapAttrs[key]);
+    });
+    Object.keys(gapStyles).forEach(key => {
+      undefinedPath.style(key, gapStyles[key]);
+    });
+    undefinedPath.classed('d3-line-chunked-undefined', true);
+
+    // before transition, ensure y will fit.
+    clipPathRects = clipPathRects.merge(clipPathRectsEnter)
+      .attr('y', yMin)
+      .attr('height', yMax);
+
 
     // handle transition
     if (context !== selection) {
-      paths = paths.transition(context);
+      definedPath = definedPath.transition(context);
+      undefinedPath = undefinedPath.transition(context);
+      clipPathRects = clipPathRects.transition(context);
     }
 
+    // after transition, update x and width
+    clipPathRects
+      .attr('x', d => x(d[0]))
+      .attr('width', d => x(d[d.length - 1]) - x(d[0]));
+
+
     // update the `d` attribute
-    const line = d3Line().x(x).y(y).curve(curve);
-    if (paths.attrTween) {
+    function dTween(d) {
+      const previous = select(this).attr('d');
+      const current = line(d);
+      return interpolatePath(previous, current);
+    }
+
+    if (definedPath.attrTween) {
       // use attrTween is available (in transition)
-      paths.attrTween('d', function dTween(d) {
-        const previous = select(this).attr('d');
-        const current = line(d.data);
-        return interpolatePath(previous, current);
-      });
+      definedPath.attrTween('d', dTween);
+      undefinedPath.attrTween('d', dTween);
     } else {
-      paths.attr('d', d => line(d.data));
+      definedPath.attr('d', d => line(d));
+      undefinedPath.attr('d', d => line(d));
     }
   }
 
@@ -249,16 +271,17 @@ export default function () {
 
     const lineData = selection.datum();
     const segments = computeSegments(lineData);
-    const segmentsAndGaps = gapsAndSegments(segments);
     const points = segments.filter(segment => segment.length === 1)
       .map(segment => ({
-        // use the position as the ID so we can have proper transitions
-        id: segmentsAndGaps.findIndex(d => d.data === segment),
+        id: Math.random(), // use random ID so they are treated as entering/exiting each time
         data: segment[0],
       }));
+    const filteredLineData = lineData.filter(d => y(d) != null && !isNaN(y(d)));
+    const yExtent = extent(filteredLineData.map(d => y(d)));
 
-    renderCircles(context, selection, points);
-    renderPaths(context, selection, segmentsAndGaps);
+    const initialRender = selection.select('.d3-line-chunked-defined').empty();
+    renderCircles(initialRender, context, selection, points);
+    renderPaths(initialRender, context, selection, filteredLineData, segments, yExtent);
   }
 
   // ------------------------------------------------
@@ -267,7 +290,7 @@ export default function () {
   function getterSetter({ get, set, setType, asConstant }) {
     return function getSet(newValue) {
       // main setter if setType matches newValue type
-      if (typeof newValue === setType) {
+      if ((!setType && newValue != null) || (setType && typeof newValue === setType)) {
         set(newValue);
         return lineChunked;
 
@@ -353,6 +376,13 @@ export default function () {
     get: () => pointAttrs,
     set: (newValue) => { pointAttrs = newValue; },
     setType: 'object',
+  });
+
+  // define `transitionInitial([transitionInitial])`
+  lineChunked.transitionInitial = getterSetter({
+    get: () => transitionInitial,
+    set: (newValue) => { transitionInitial = newValue; },
+    setType: 'boolean',
   });
 
   return lineChunked;

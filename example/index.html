@@ -114,7 +114,8 @@ function renderChunkedLine(lineData, root) {
     .gapStyles({
       'stroke-dasharray': '4 4',
       'stroke-opacity': 0.2,
-    });
+    })
+    .transitionInitial(false);
 
   root
     .datum(lineData)

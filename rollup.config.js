@@ -1,6 +1,7 @@
 import babel from 'rollup-plugin-babel';
 
 var globals = {
+  'd3-array': 'd3',
   'd3-interpolate': 'd3',
   'd3-interpolate-path': 'd3',
   'd3-shape': 'd3',
