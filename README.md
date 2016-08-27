@@ -130,6 +130,8 @@ The default returns `true` for all points.
 
 Get or set *transitionInitial*, a boolean flag that indicates whether to perform a transition on initial render or not. If true and the *context* that *lineChunked* is called in is a transition, then the line will animate its y value on initial render. If false, the line will appear rendered immediately with no animation on initial render. This does not affect any subsequent renders and their respective transitions.
 
+The default value is `true`.
+
 
 
 <a href="#lineChunked_lineStyles" name="lineChunked_lineStyles">#</a> *lineChunked*.**lineStyles**([*lineStyles*])
