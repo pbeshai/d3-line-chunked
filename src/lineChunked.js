@@ -257,8 +257,8 @@ export default function () {
     clipPathRects.exit().remove();
     const clipPathRectsEnter = clipPathRects.enter().append('rect')
       .attr('x', d => x(d[0]))
-      .attr('y', yMin)
       .attr('width', 0)
+      .attr('y', yMin)
       .attr('height', yMax);
 
     // on initial load, have the width already at max and the line already at full width
@@ -296,11 +296,8 @@ export default function () {
     });
     undefinedPath.classed('d3-line-chunked-undefined', true);
 
-    // before transition, ensure y will fit.
-    clipPathRects = clipPathRects.merge(clipPathRectsEnter)
-      .attr('y', yMin)
-      .attr('height', yMax);
-
+    // merge in updating rects with entering
+    clipPathRects = clipPathRects.merge(clipPathRectsEnter);
 
     // handle transition
     if (context !== selection) {
@@ -309,10 +306,12 @@ export default function () {
       clipPathRects = clipPathRects.transition(context);
     }
 
-    // after transition, update x and width
+    // after transition, update the clip rect dimensions
     clipPathRects
       .attr('x', d => x(d[0]))
-      .attr('width', d => x(d[d.length - 1]) - x(d[0]));
+      .attr('width', d => x(d[d.length - 1]) - x(d[0]))
+      .attr('y', yMin)
+      .attr('height', yMax);
 
 
     // update the `d` attribute
