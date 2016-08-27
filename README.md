@@ -7,7 +7,7 @@ from the defined areas. Single points are rendered as circles. Transitions are s
 
 Demo: http://peterbeshai.com/vis/d3-line-chunked/
 
-![d3-line-chunked demo](http://peterbeshai.com/vis/d3-line-chunked/d3-line-chunked-demo.gif)
+![d3-line-chunked demo](https://cloud.githubusercontent.com/assets/793847/18028989/5aa2ee0c-6c59-11e6-88ef-143a79715cc6.gif)
 
 ## Example Usage
 
