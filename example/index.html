@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>d3-line-chunked</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="example.css" />
+    <style>
+      /*path {
+        stroke: #0bb;
+        stroke-width: 1.5px;
+        fill: none;
+      }*/
+    </style>
+  </head>
+  <body>
+    <h1 class="main-header">d3-line-chunked</h1>
+    <p class="main-link"><a href="https://github.com/pbeshai/d3-line-chunked">https://github.com/pbeshai/d3-line-chunked</a></p>
+    <div class='chart-container'></div>
+    <p>
+      <a href="https://github.com/pbeshai/d3-line-chunked">Code on GitHub</a>
+    </p>
+    <script src="//d3js.org/d3.v4.min.js"></script>
+    <script src="d3-interpolate-path.js"></script>
+    <script src="d3-line-chunked.js"></script>
+    <script>
+var transitionDuration = 1000;
+
+// shared chart properties
+var x, y, xAxis, yAxis, color, svg, line, width, height;
+var lineColor = '#0bb';
+
+/* eslint-disable */
+function generateRandom(length) {
+  var xRandomizer = d3.randomNormal(150, 150);
+  var yRandomizer = d3.randomLogNormal(3, 1.2);
+  var vRandomizer = d3.randomNormal(150, 50);
+  var missingChance = 0.3;
+
+  return d3.range(length).map(i => ({
+    x: i,
+    y: Math.round(yRandomizer()),
+    v: Math.round(vRandomizer())
+  })).map(d => {
+    if (Math.random() > missingChance && d.x > 3 && d.x < length - 2) {
+      d.y = undefined;
+    }
+    return d;
+  });
+}
+
+function setupChart(data) {
+  var margin = {top: 20, right: 30, bottom: 0, left: 20};
+  width = 800 - margin.left - margin.right;
+  height = 600 - margin.top - margin.bottom;
+
+  color = d3.scaleSequential(d3.interpolateMagma)
+    .domain(d3.extent(data, d => d.v));
+
+  x = d3
+      .scaleLinear()
+      .domain(d3.extent(data, d => d.x))
+      .range([0, width]);
+
+  y = d3
+      .scaleLinear()
+      .domain(d3.extent(data, d => d.y))
+      .range([0.5 * height / 4, 0]);
+
+
+  svg = d3.select('.chart-container').append('svg')
+      .attr('width', width + margin.left + margin.right)
+      .attr('height', height + margin.top + margin.bottom)
+    .append('g')
+      .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+  line = d3.line()
+      .curve(d3.curveLinear)
+      .x((d) => x(d.x))
+      .y((d) => y(d.y));
+
+  svg.append('g')
+      .attr('class', 'ref-lines');
+
+  svg.append('g')
+      .attr('class', 'basic-line')
+      .append('text')
+        .text('Basic Line')
+        .attr('dy', -8);
+
+  svg.append('g')
+    .attr('class', 'chunked-line')
+    .attr('transform', 'translate(0,' + (height / 4) + ')')
+    .append('text')
+        .text('Many <path>s')
+        .attr('dy', -8);
+
+  d3.select('.chart-container').append('button')
+    .text('New Data')
+    .on('click', () => updateChart(generateRandom(20)))
+
+  updateChart(data);
+}
+
+
+function renderChunkedLine(lineData, root) {
+  var lineChunked = d3.lineChunked()
+    .x(d => x(d.x))
+    .y(d => y(d.y))
+    .curve(d3.curveLinear)
+    .defined(d => d.y != null)
+    .lineStyles({
+      stroke: '#0bb',
+    })
+    .gapStyles({
+      'stroke-dasharray': '4 4',
+      'stroke-opacity': 0.2,
+    });
+
+  root
+    .datum(lineData)
+    .transition()
+    .duration(transitionDuration)
+    .call(lineChunked);
+}
+
+function renderBasicLine(newData, root) {
+  const filteredData = newData.filter(d => d.y != null);
+
+  // render basic line
+  let basicLine = root.select('path');
+
+  if (basicLine.empty()) {
+    basicLine = root.append('path')
+      .style('opacity', 1e-6);
+  }
+
+  basicLine
+      .style('fill', 'none')
+      .style('stroke', lineColor)
+      .style('stroke-width', 2)
+      .transition()
+      .duration(transitionDuration)
+      .style('opacity', 1)
+      .attr('d', line(filteredData));
+
+  const circleBinding = root.selectAll('circle').data(filteredData);
+
+  const circleEntering = circleBinding.enter()
+    .append('circle')
+    .attr('cx', d => x(d.x))
+    .attr('cy', d => y(d.y));
+
+  circleBinding.merge(circleEntering)
+    .style('fill', lineColor)
+    .transition()
+    .duration(transitionDuration)
+    .attr('r', 3.5)
+    .attr('cx', d => x(d.x))
+    .attr('cy', d => y(d.y));
+
+  circleBinding.exit().remove();
+}
+
+function renderRefLines(newData, root) {
+  const filteredData = newData.filter(d => d.y != null);
+
+  const binding = root.selectAll('line').data(filteredData);
+
+  const entering = binding.enter()
+    .append('line')
+      .style('stroke', 'transparent')
+      .attr('x1', d => x(d.x))
+      .attr('x2', d => x(d.x));
+
+
+
+  binding.merge(entering)
+    .transition()
+    .duration(transitionDuration)
+    .style('stroke', '#f4f4f4')
+    .attr('x1', d => x(d.x))
+    .attr('x2', d => x(d.x))
+    .attr('y1', d => 0)
+    .attr('y2', d => height)
+
+  binding.exit().remove();
+}
+
+function updateChart(newData) {
+  x.domain(d3.extent(newData, d => d.x));
+  y.domain(d3.extent(newData, d => d.y));
+
+  const gRefLines = svg.select('.ref-lines');
+  renderRefLines(newData, gRefLines);
+
+
+  const gBasicLine = svg.select('.basic-line');
+  renderBasicLine(newData, gBasicLine);
+
+  const gChunkedLine = svg.select('.chunked-line');
+  renderChunkedLine(newData, gChunkedLine);
+}
+
+// create the chart
+setupChart(generateRandom(20));
+
+
+
+  </script>
+</body>
+</html>
