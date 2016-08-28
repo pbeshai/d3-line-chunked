@@ -3,6 +3,9 @@ import { select } from 'd3-selection';
 import { curveLinear, line as d3Line } from 'd3-shape';
 import { interpolatePath } from 'd3-interpolate-path'; // only needed if using transitions
 
+// used to generate IDs for clip paths
+let counter = 0;
+
 /**
  * Renders line with potential gaps in the data by styling the gaps differently
  * from the defined areas. Single points are rendered as circles. Transitions are
@@ -230,7 +233,7 @@ export default function () {
     let definedPath = selection.select('.d3-line-chunked-defined');
     let undefinedPath = selection.select('.d3-line-chunked-undefined');
 
-    const clipPathId = 'my-clip-path'; // TODO: dynamic
+    const clipPathId = `d3-line-chunked-clip-path-${counter++}`; // TODO: dynamic
     let clipPath = selection.select('clipPath');
 
     // main line function
@@ -243,6 +246,8 @@ export default function () {
       clipPath = selection.append('defs')
         .append('clipPath')
         .attr('id', clipPathId);
+    } else {
+      clipPath.attr('id', clipPathId);
     }
 
     definedPath.attr('clip-path', `url(#${clipPathId})`);
