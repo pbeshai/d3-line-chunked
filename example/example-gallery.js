@@ -309,6 +309,31 @@
         }, transitionDuration / 4);
       },
     },
+    {
+      label: 'Transition: few -> many segments',
+      transition: true,
+      render: function typicalExample(root) {
+        var g = root.append('svg')
+          .attr('width', exampleWidth)
+          .attr('height', exampleHeight)
+          .append('g');
+
+        var chunked = d3.lineChunked()
+          .x(function (d) { return x(d[0]); })
+          .y(function (d) { return y(d[1]); })
+          .isNext(function (prev, curr) { return curr[0] === prev[0] + 1; })
+          .debug(true)
+          .transitionInitial(false);
+
+        var dataStart = [[0, 1], [1, 2], [7, 0], [8, 1], [9, 0], [10, 1]];
+        var dataEnd = [[0, 1], [1, 2], [3, 0], [4, 1], [6, 3], [7, 2], [9, 1], [10, 1]];
+
+        g.datum(dataStart).call(chunked);
+        setTimeout(function () {
+          g.datum(dataEnd).transition().duration(transitionDuration).call(chunked);
+        }, transitionDuration / 4);
+      },
+    },
   ];
 
 
