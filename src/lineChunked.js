@@ -229,7 +229,7 @@ export default function () {
   /**
    * Render the paths for segments and gaps
    */
-  function renderPaths(initialRender, context, selection, lineData, segments, [yMin, yMax]) {
+  function renderPaths(initialRender, context, selection, lineData, segments, [xMin, xMax], [yMin, yMax]) {
     let definedPath = selection.select('.d3-line-chunked-defined');
     let undefinedPath = selection.select('.d3-line-chunked-undefined');
 
@@ -259,8 +259,10 @@ export default function () {
 
     // get stroke width to avoid having the clip rects clip the stroke
     // See https://github.com/pbeshai/d3-line-chunked/issues/2
-    const strokeWidth = parseFloat(lineStyles['stroke-width'] || definedPath.style('stroke-width') || lineAttrs['stroke-width']);
-    const strokeWidthClipAdjustment = Math.ceil(strokeWidth / 2);
+    const strokeWidth = parseFloat(lineStyles['stroke-width']
+      || definedPath.style('stroke-width')
+      || lineAttrs['stroke-width']);
+    const strokeWidthClipAdjustment = strokeWidth;
     const clipRectY = yMin - strokeWidthClipAdjustment;
     const clipRectHeight = (yMax + strokeWidthClipAdjustment) - (yMin - strokeWidthClipAdjustment);
 
@@ -319,8 +321,27 @@ export default function () {
 
     // after transition, update the clip rect dimensions
     clipPathRects
-      .attr('x', d => x(d[0]))
-      .attr('width', d => x(d[d.length - 1]) - x(d[0]))
+      .attr('x', d => {
+        // if at the edge, adjust for stroke width
+        const val = x(d[0]);
+        if (val === xMin) {
+          return val - strokeWidthClipAdjustment;
+        }
+        return val;
+      })
+      .attr('width', d => {
+        // if at the edge, adjust for stroke width to prevent clipping it
+        let valMin = x(d[0]);
+        let valMax = x(d[d.length - 1]);
+        if (valMin === xMin) {
+          valMin -= strokeWidthClipAdjustment;
+        }
+        if (valMax === xMax) {
+          valMax += strokeWidthClipAdjustment;
+        }
+
+        return valMax - valMin;
+      })
       .attr('y', clipRectY)
       .attr('height', clipRectHeight);
 
@@ -360,10 +381,11 @@ export default function () {
 
     // determine the extent of the y values
     const yExtent = extent(filteredLineData.map(d => y(d)));
+    const xExtent = extent(filteredLineData.map(d => x(d)));
 
     const initialRender = selection.select('.d3-line-chunked-defined').empty();
     renderCircles(initialRender, context, selection, points);
-    renderPaths(initialRender, context, selection, filteredLineData, segments, yExtent);
+    renderPaths(initialRender, context, selection, filteredLineData, segments, xExtent, yExtent);
   }
 
   // ------------------------------------------------
