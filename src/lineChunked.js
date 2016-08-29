@@ -331,21 +331,29 @@ export default function () {
     // set up the clipping paths
     clipPathRects.exit().remove();
 
+    // compute the start and end x values for a data point based on maximizing visibility
+    // around the middle of the rect.
+    function enterRectStartEnd(d) {
+      const xStart = x(d[0]);
+      const xEnd = x(d[d.length - 1]);
+      const xMid = xStart + ((xEnd - xStart) / 2);
+      const visArea = visibleArea.find(area => area[0] <= xMid && xMid <= area[1]);
+
+      // set width to overlapping visible area
+      if (visArea) {
+        return [Math.max(visArea[0], xStart), Math.min(xEnd, visArea[1])];
+      }
+
+      // return xEnd - xStart;
+      return [xMid, xMid];
+    }
+
     function enterRect(rect) {
-      rect.attr('x', d => x(d[0]))
+      rect
+        .attr('x', d => enterRectStartEnd(d)[0])
         .attr('width', d => {
-          const xStart = x(d[0]);
-          const xEnd = x(d[d.length - 1]);
-
-          const visArea = visibleArea.find(area => area[0] <= xStart && xStart <= area[1]);
-
-          // set width to overlapping visible area
-          if (visArea) {
-            return Math.min(xEnd, visArea[1]) - xStart;
-          }
-
-          // return xEnd - xStart;
-          return 0;
+          const [xStart, xEnd] = enterRectStartEnd(d);
+          return xEnd - xStart;
         })
         .attr('y', clipRectY)
         .attr('height', clipRectHeight);
@@ -364,16 +372,8 @@ export default function () {
         .call(enterRect);
     }
 
-    // on initial load, have the width already at max and the line already at full width
+    // handle animations for initial render
     if (initialRender) {
-      clipPathRectsEnter
-        .attr('width', d => x(d[d.length - 1]) - x(d[0]));
-
-      if (debug) {
-        debugRectsEnter
-          .attr('width', d => x(d[d.length - 1]) - x(d[0]));
-      }
-
       // have the line load in with a flat y value
       let initialLine = line;
       let initialUndefinedLine = line;
