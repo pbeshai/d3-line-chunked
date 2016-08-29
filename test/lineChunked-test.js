@@ -131,8 +131,8 @@ tape('lineChunked() with many data points and some undefined', function (t) {
   g.datum(data).call(chunked);
   // console.log(g.node().innerHTML);
 
-  t.equal(5, lengthOfPath(g.select(definedLineClass)), 5);
-  t.equal(5, lengthOfPath(g.select(undefinedLineClass)), 5);
+  t.equal(5, lengthOfPath(g.select(definedLineClass)));
+  t.equal(5, lengthOfPath(g.select(undefinedLineClass)));
   t.equal(1, g.select(definedPointClass).size());
 
   const rects = g.selectAll('clipPath').selectAll('rect');
@@ -159,8 +159,8 @@ tape('lineChunked() stroke width clipping adjustments', function (t) {
   g.datum(data).call(chunked);
   // console.log(g.node().innerHTML);
 
-  t.equal(5, lengthOfPath(g.select(definedLineClass)), 5);
-  t.equal(5, lengthOfPath(g.select(undefinedLineClass)), 5);
+  t.equal(5, lengthOfPath(g.select(definedLineClass)));
+  t.equal(5, lengthOfPath(g.select(undefinedLineClass)));
   t.equal(1, g.select(definedPointClass).size());
 
   const rects = g.selectAll('clipPath').selectAll('rect');
@@ -186,8 +186,8 @@ tape('lineChunked() when context is a transition', function (t) {
   g.datum(data).transition().duration(0).call(chunked);
   // console.log(g.node().innerHTML);
 
-  t.equal(5, lengthOfPath(g.select(definedLineClass)), 5);
-  t.equal(5, lengthOfPath(g.select(undefinedLineClass)), 5);
+  t.equal(5, lengthOfPath(g.select(definedLineClass)));
+  t.equal(5, lengthOfPath(g.select(undefinedLineClass)));
   t.equal(1, g.select(definedPointClass).size());
 
   const rects = g.selectAll('clipPath').selectAll('rect');
@@ -224,6 +224,41 @@ tape('lineChunked() - defined and isNext can set gaps in data', function (t) {
   const rectsDefined = gDefined.selectAll('clipPath').node().innerHTML;
   const rectsIsNext = gIsNext.selectAll('clipPath').node().innerHTML;
   t.equal(rectsDefined, rectsIsNext);
+
+  t.end();
+});
+
+tape('lineChunked() with extendEnds set', function (t) {
+  const document = jsdom.jsdom();
+  const g = select(document.body).append('svg').append('g');
+
+  const chunked = lineChunked()
+    .lineAttrs({ 'stroke-width': 0 })
+    .extendEnds([0, 10])
+    .defined(d => d[1] !== null);
+
+  const data = [[1, 2], [2, 1], [3, null], [4, 1], [5, null], [6, 2], [7, 3]];
+
+  g.datum(data).call(chunked);
+  // console.log(g.node().innerHTML);
+
+  t.equal(lengthOfPath(g.select(definedLineClass)), 5);
+  t.equal(lengthOfPath(g.select(undefinedLineClass)), 7);
+  t.equal(g.select(definedPointClass).size(), 1);
+
+  const undefPathPoints = g.select(undefinedLineClass).attr('d').split(/(?=[ML])/);
+  // should move to edge and line to first point
+  t.equal(undefPathPoints[0], 'M0,2');
+  t.equal(undefPathPoints[1], 'L1,2');
+
+  // should line to end point
+  t.equal(undefPathPoints[undefPathPoints.length - 1], 'L10,3');
+
+  const rects = g.selectAll('clipPath').selectAll('rect');
+  t.equal(3, rects.size(), 3);
+  t.deepEqual({ x: '1', width: '1', y: '1', height: '2' }, rectDimensions(rects.nodes()[0]));
+  t.deepEqual({ x: '4', width: '0', y: '1', height: '2' }, rectDimensions(rects.nodes()[1]));
+  t.deepEqual({ x: '6', width: '1', y: '1', height: '2' }, rectDimensions(rects.nodes()[2]));
 
   t.end();
 });
