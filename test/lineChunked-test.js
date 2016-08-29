@@ -29,6 +29,9 @@ function rectDimensions(rect) {
   };
 }
 
+// NOTE: stroke-width 0 is used in the tests to prevent accounting for the stroke-width adjustments
+// added in https://github.com/pbeshai/d3-line-chunked/issues/2
+
 tape('lineChunked() getter and setters work', function (t) {
   const chunked = lineChunked();
 
@@ -99,7 +102,7 @@ tape('lineChunked() with many data points', function (t) {
   const document = jsdom.jsdom();
   const g = select(document.body).append('svg').append('g');
 
-  const chunked = lineChunked();
+  const chunked = lineChunked().lineAttrs({ 'stroke-width': 0 });
   const data = [[0, 1], [1, 2], [2, 1]];
 
   g.datum(data).call(chunked);
@@ -120,6 +123,7 @@ tape('lineChunked() with many data points and some undefined', function (t) {
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked()
+    .lineAttrs({ 'stroke-width': 0 })
     .defined(d => d[1] !== null);
 
   const data = [[0, 1], [1, 2], [2, null], [3, null], [4, 1], [5, null], [6, 2], [7, 3]];
@@ -141,11 +145,40 @@ tape('lineChunked() with many data points and some undefined', function (t) {
 });
 
 
+
+tape('lineChunked() stroke width clipping adjustments', function (t) {
+  const document = jsdom.jsdom();
+  const g = select(document.body).append('svg').append('g');
+
+  const chunked = lineChunked()
+    .lineAttrs({ 'stroke-width': 2 })
+    .defined(d => d[1] !== null);
+
+  const data = [[0, 1], [1, 2], [2, null], [3, null], [4, 1], [5, null], [6, 2], [7, 3]];
+
+  g.datum(data).call(chunked);
+  // console.log(g.node().innerHTML);
+
+  t.equal(5, lengthOfPath(g.select(definedLineClass)), 5);
+  t.equal(5, lengthOfPath(g.select(undefinedLineClass)), 5);
+  t.equal(1, g.select(definedPointClass).size());
+
+  const rects = g.selectAll('clipPath').selectAll('rect');
+  t.equal(3, rects.size(), 3);
+  t.deepEqual({ x: '-2', width: '3', y: '-1', height: '6' }, rectDimensions(rects.nodes()[0]));
+  t.deepEqual({ x: '4', width: '0', y: '-1', height: '6' }, rectDimensions(rects.nodes()[1]));
+  t.deepEqual({ x: '6', width: '3', y: '-1', height: '6' }, rectDimensions(rects.nodes()[2]));
+
+  t.end();
+});
+
+
 tape('lineChunked() when context is a transition', function (t) {
   const document = jsdom.jsdom();
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked()
+    .lineAttrs({ 'stroke-width': 0 })
     .defined(d => d[1] !== null);
 
   const data = [[0, 1], [1, 2], [2, null], [3, null], [4, 1], [5, null], [6, 2], [7, 3]];
@@ -172,6 +205,7 @@ tape('lineChunked() - defined and isNext can set gaps in data', function (t) {
   const gDefined = select(document.body).append('svg').append('g');
 
   const chunkedDefined = lineChunked()
+    .lineAttrs({ 'stroke-width': 0 })
     .defined(d => d[1] !== null);
 
   const dataDefined = [[0, 1], [1, 2], [2, null], [3, null], [4, 1], [5, null], [6, 2], [7, 3]];
@@ -180,6 +214,7 @@ tape('lineChunked() - defined and isNext can set gaps in data', function (t) {
   const gIsNext = select(document.body).append('svg').append('g');
 
   const chunkedIsNext = lineChunked()
+    .lineAttrs({ 'stroke-width': 0 })
     .isNext((prev, curr) => curr[0] === prev[0] + 1);
 
   const dataIsNext = [[0, 1], [1, 2], [4, 1], [6, 2], [7, 3]];
