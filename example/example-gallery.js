@@ -30,6 +30,25 @@ var examples = [
     },
   },
   {
+    label: 'Typical with curve',
+    render: function typicalExample(root) {
+      var g = root.append('svg')
+        .attr('width', exampleWidth)
+        .attr('height', exampleHeight)
+        .append('g');
+
+      var chunked = d3.lineChunked()
+        .curve(d3.curveMonotoneX)
+        .x(function (d) { return x(d[0]); })
+        .y(function (d) { return x(d[1]); })
+        .defined(function (d) { return d[1] !== null; });
+
+      var data = [[0, 1], [1, 2], [2, null], [3, null], [4, 1], [5, null], [6, 2], [7, 3], [8, null], [9, 1], [10, 1]];
+
+      g.datum(data).call(chunked);
+    },
+  },
+  {
     label: 'Many points, all defined',
     render: function typicalExample(root) {
       var g = root.append('svg')
