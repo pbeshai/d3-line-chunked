@@ -122,6 +122,8 @@ export default function () {
   let extendEnds;
 
 
+  let debug = false;
+
   /**
    * Helper function to compute the contiguous segments of the data
    * @param {Array} lineData the line data
@@ -251,6 +253,14 @@ export default function () {
     // can be different if the user decides to extend ends since we need to recreate the data
     // in a different format.
     let undefinedLine = line;
+    let gDebug = selection.select('.d3-line-chunked-debug');
+
+    // set up debug group
+    if (debug && gDebug.empty()) {
+      gDebug = selection.append('g').classed('d3-line-chunked-debug', true);
+    } else if (!debug && !gDebug.empty()) {
+      gDebug.remove();
+    }
 
     // initial render
     if (definedPath.empty()) {
@@ -285,6 +295,10 @@ export default function () {
     }
     undefinedPath.datum(undefinedData);
     let clipPathRects = clipPath.selectAll('rect').data(segments);
+    let debugRects;
+    if (debug) {
+      debugRects = gDebug.selectAll('rect').data(segments);
+    }
 
     // get stroke width to avoid having the clip rects clip the stroke
     // See https://github.com/pbeshai/d3-line-chunked/issues/2
@@ -303,10 +317,28 @@ export default function () {
       .attr('y', clipRectY)
       .attr('height', clipRectHeight);
 
+    // debug rects should match clipPathRects
+    let debugRectsEnter;
+    if (debug) {
+      debugRects.exit().remove();
+      debugRectsEnter = debugRects.enter().append('rect')
+        .style('fill', 'rgba(255, 0, 0, 0.3)')
+        .style('stroke', 'rgba(255, 0, 0, 0.6)')
+        .attr('x', d => x(d[0]))
+        .attr('width', 0)
+        .attr('y', clipRectY)
+        .attr('height', clipRectHeight);
+    }
+
     // on initial load, have the width already at max and the line already at full width
     if (initialRender) {
       clipPathRectsEnter
         .attr('width', d => x(d[d.length - 1]) - x(d[0]));
+
+      if (debug) {
+        debugRectsEnter
+          .attr('width', d => x(d[d.length - 1]) - x(d[0]));
+      }
 
       // have the line load in with a flat y value
       let initialLine = line;
@@ -349,16 +381,24 @@ export default function () {
     // merge in updating rects with entering
     clipPathRects = clipPathRects.merge(clipPathRectsEnter);
 
+    if (debug) {
+      debugRects = debugRects.merge(debugRectsEnter);
+    }
+
     // handle transition
     if (context !== selection) {
       definedPath = definedPath.transition(context);
       undefinedPath = undefinedPath.transition(context);
       clipPathRects = clipPathRects.transition(context);
+
+      if (debug) {
+        debugRects = debugRects.transition(context);
+      }
     }
 
     // after transition, update the clip rect dimensions
-    clipPathRects
-      .attr('x', d => {
+    function updateRect(rect) {
+      rect.attr('x', d => {
         // if at the edge, adjust for stroke width
         const val = x(d[0]);
         if (val === xMin) {
@@ -381,6 +421,14 @@ export default function () {
       })
       .attr('y', clipRectY)
       .attr('height', clipRectHeight);
+    }
+    clipPathRects
+      .call(updateRect);
+
+
+    if (debug) {
+      debugRects.call(updateRect);
+    }
 
     if (definedPath.attrTween) {
       // use attrTween is available (in transition)
@@ -543,6 +591,13 @@ export default function () {
     get: () => extendEnds,
     set: (newValue) => { extendEnds = newValue; },
     setType: 'object', // should be an array
+  });
+
+  // define `debug([debug])`
+  lineChunked.debug = getterSetter({
+    get: () => debug,
+    set: (newValue) => { debug = newValue; },
+    setType: 'boolean',
   });
 
   return lineChunked;
