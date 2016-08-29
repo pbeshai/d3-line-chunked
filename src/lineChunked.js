@@ -420,8 +420,9 @@ export default function () {
     const yExtent = extent(filteredLineData.map(d => y(d)));
 
     // determine the extent of the x values to handle stroke-width adjustments on
-    // clipping rects. If extendEnds is provided, use that, otherwise compute it.
-    const xExtent = extendEnds || extent(filteredLineData.map(d => x(d)));
+    // clipping rects. Do not use extendEnds here since it can clip the line ending
+    // in an unnatural way, it's better to just show the end.
+    const xExtent = extent(filteredLineData.map(d => x(d)));
 
     const initialRender = selection.select('.d3-line-chunked-defined').empty();
     renderCircles(initialRender, context, selection, points);
