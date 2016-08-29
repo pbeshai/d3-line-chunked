@@ -56,6 +56,7 @@ var examples = [
         .append('g');
 
       var chunked = d3.lineChunked()
+        .lineStyles({ 'stroke-width': '10px' })
         .x(function (d) { return x(d[0]); })
         .y(function (d) { return x(d[1]); })
         .defined(function (d) { return d[1] !== null; });
