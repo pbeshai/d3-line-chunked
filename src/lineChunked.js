@@ -328,23 +328,11 @@ export default function () {
       });
     }
 
-    // set up the clipping paths
-    // animate by shrinking width to 0 and setting x to the mid point
-    function exitRect(rect) {
-      rect
-        .attr('width', 0)
-        .attr('x', d => x(d[0]) + ((x(d[d.length - 1]) - x(d[0])) / 2));
-    }
 
-    if (context !== selection) {
-      clipPathRects.exit().transition(context).call(exitRect).remove();
-    } else {
-      clipPathRects.exit().transition(context).remove();
-    }
 
     // compute the start and end x values for a data point based on maximizing visibility
     // around the middle of the rect.
-    function enterRectStartEnd(d) {
+    function visibleStartEnd(d, visibleArea) {
       const xStart = x(d[0]);
       const xEnd = x(d[d.length - 1]);
       const xMid = xStart + ((xEnd - xStart) / 2);
@@ -359,11 +347,40 @@ export default function () {
       return [xMid, xMid];
     }
 
+    // set up the clipping paths
+    // animate by shrinking width to 0 and setting x to the mid point
+    let nextVisibleArea;
+    if (!segments.length) {
+      nextVisibleArea = [[0, 0]];
+    } else {
+      nextVisibleArea = segments.map(d => {
+        const xStart = x(d[0]);
+        const xEnd = x(d[d.length - 1]) + xStart;
+        return [xStart, xEnd];
+      });
+    }
+
+    function exitRect(rect) {
+      rect
+        .attr('x', d => visibleStartEnd(d, nextVisibleArea)[0])
+        .attr('width', d => {
+          const [xStart, xEnd] = visibleStartEnd(d, nextVisibleArea);
+          return xEnd - xStart;
+        });
+    }
+
+    if (context !== selection) {
+      clipPathRects.exit().transition(context).call(exitRect).remove();
+    } else {
+      clipPathRects.exit().transition(context).remove();
+    }
+
+
     function enterRect(rect) {
       rect
-        .attr('x', d => enterRectStartEnd(d)[0])
+        .attr('x', d => visibleStartEnd(d, visibleArea)[0])
         .attr('width', d => {
-          const [xStart, xEnd] = enterRectStartEnd(d);
+          const [xStart, xEnd] = visibleStartEnd(d, visibleArea);
           return xEnd - xStart;
         })
         .attr('y', clipRectY)
