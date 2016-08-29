@@ -264,7 +264,7 @@ export default function () {
       .attr('x', d => x(d[0]))
       .attr('width', 0)
       .attr('y', yMin)
-      .attr('height', yMax);
+      .attr('height', yMax - yMin);
 
     // on initial load, have the width already at max and the line already at full width
     if (initialRender) {
@@ -316,7 +316,7 @@ export default function () {
       .attr('x', d => x(d[0]))
       .attr('width', d => x(d[d.length - 1]) - x(d[0]))
       .attr('y', yMin)
-      .attr('height', yMax);
+      .attr('height', yMax - yMin);
 
 
     // update the `d` attribute
