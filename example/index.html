@@ -5,11 +5,11 @@
     <meta charset="utf-8">
     <link rel="stylesheet" href="example.css" />
     <style>
-      /*path {
-        stroke: #0bb;
-        stroke-width: 1.5px;
-        fill: none;
-      }*/
+      .example-gallery div {
+        display: inline-block;
+        margin-right: 15px;
+        margin-bottom: 15px;
+      }
     </style>
   </head>
   <body>
@@ -19,9 +19,11 @@
     <p>
       <a href="https://github.com/pbeshai/d3-line-chunked">Code on GitHub</a>
     </p>
+    <div class='example-gallery'><h2>Example Cases</h2></div>
     <script src="//d3js.org/d3.v4.min.js"></script>
     <script src="d3-interpolate-path.js"></script>
     <script src="d3-line-chunked.js"></script>
+    <script src="example-gallery.js"></script>
     <script>
 var transitionDuration = 1000;
 
