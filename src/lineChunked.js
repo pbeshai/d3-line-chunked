@@ -121,7 +121,9 @@ export default function () {
    */
   let extendEnds;
 
-
+  /**
+   * A flag specifying whether to render in debug mode or not.
+   */
   let debug = false;
 
   /**
@@ -309,13 +311,48 @@ export default function () {
     const clipRectY = yMin - strokeWidthClipAdjustment;
     const clipRectHeight = (yMax + strokeWidthClipAdjustment) - (yMin - strokeWidthClipAdjustment);
 
+    // compute the currently visible area pairs of [xStart, xEnd] for each clip rect
+    // if no clip rects, the whole area is visible.
+    let visibleArea;
+    // select previous rects
+    const previousRects = clipPath.selectAll('rect').nodes();
+    // no previous rects = visible area is everything
+    if (!previousRects.length) {
+      visibleArea = [[xMin, xMax]];
+    } else {
+      visibleArea = previousRects.map(rect => {
+        const selectedRect = select(rect);
+        const xStart = parseFloat(selectedRect.attr('x'));
+        const xEnd = parseFloat(selectedRect.attr('width')) + xStart;
+        return [xStart, xEnd];
+      });
+    }
+
     // set up the clipping paths
     clipPathRects.exit().remove();
-    const clipPathRectsEnter = clipPathRects.enter().append('rect')
-      .attr('x', d => x(d[0]))
-      .attr('width', 0)
-      .attr('y', clipRectY)
-      .attr('height', clipRectHeight);
+
+    function enterRect(rect) {
+      rect.attr('x', d => x(d[0]))
+        .attr('width', d => {
+          const xStart = x(d[0]);
+          const xEnd = x(d[d.length - 1]);
+
+          const visArea = visibleArea.find(area => area[0] <= xStart && xStart <= area[1]);
+
+          // set width to overlapping visible area
+          if (visArea) {
+            return Math.min(xEnd, visArea[1]) - xStart;
+          }
+
+          // return xEnd - xStart;
+          return 0;
+        })
+        .attr('y', clipRectY)
+        .attr('height', clipRectHeight);
+    }
+
+    const clipPathRectsEnter = clipPathRects.enter().append('rect').call(enterRect);
+
 
     // debug rects should match clipPathRects
     let debugRectsEnter;
@@ -324,10 +361,7 @@ export default function () {
       debugRectsEnter = debugRects.enter().append('rect')
         .style('fill', 'rgba(255, 0, 0, 0.3)')
         .style('stroke', 'rgba(255, 0, 0, 0.6)')
-        .attr('x', d => x(d[0]))
-        .attr('width', 0)
-        .attr('y', clipRectY)
-        .attr('height', clipRectHeight);
+        .call(enterRect);
     }
 
     // on initial load, have the width already at max and the line already at full width
