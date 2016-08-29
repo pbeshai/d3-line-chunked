@@ -362,10 +362,21 @@
     .attr('min', 0)
     .attr('max', 5000)
     .attr('value', transitionDuration)
-    .on('change', function (d) {
+    .on('change', function () {
       transitionDuration = parseFloat(this.value);
       transitionSliderValue.text(transitionDuration);
     });
+  var transitionDebugControl = transitionSlider.append('label');
+  transitionDebugControl.append('input')
+    .attr('type', 'checkbox')
+    .attr('checked', transitionDebug ? true : null)
+    .on('change', function () {
+      transitionDebug = this.checked;
+      console.log(transitionDebug, this.value, this.checked)
+    });
+  transitionDebugControl.append('span')
+    .text('Debug');
+
 
   examples.forEach(function (example) {
     var div = galleryRoot.append('div').attr('class', 'example');
