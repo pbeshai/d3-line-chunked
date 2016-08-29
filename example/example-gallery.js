@@ -9,6 +9,8 @@
   var x = d3.scaleLinear().domain([0, 10]).range([10, exampleWidth - 10]);
   var y = d3.scaleLinear().domain([0, 4]).range([exampleHeight - 10, 10]);
 
+  var transitionDuration = 5000;
+
   var examples = [
     {
       label: 'Typical',
@@ -207,11 +209,104 @@
           .x(function (d) { return x(d[0]); })
           .y(function (d) { return y(d[1]); })
           .defined(function (d) { return d[1] !== null; })
+          .debug(true)
           .transitionInitial(true);
 
-        var data = [[0, 1], [2, 2], [4, 1], [5, null], [7, 2], [8, 2], [9, 0]];
+        var data = [[0, 1], [2, 2], [4, 1], [5, null], [6, 2], [7, null], [8, 2], [9, 0]];
 
-        g.datum(data).call(chunked);
+        g.datum(data).transition().duration(transitionDuration).call(chunked);
+      },
+    },
+    {
+      label: 'Transition: full to missing',
+      transition: true,
+      render: function typicalExample(root) {
+        var g = root.append('svg')
+          .attr('width', exampleWidth)
+          .attr('height', exampleHeight)
+          .append('g');
+
+        var chunked = d3.lineChunked()
+          .x(function (d) { return x(d[0]); })
+          .y(function (d) { return y(d[1]); })
+          .defined(function (d) { return d[1] !== null; })
+          .debug(true)
+          .transitionInitial(false);
+
+        var dataStart = [[0, 1], [2, 2], [4, 1], [6, 2], [8, 2], [9, 0]];
+        var dataEnd = [[0, 1], [2, 2], [4, 1], [5, null], [6, 2], [7, null], [8, 2], [9, 0]];
+
+        g.datum(dataStart).call(chunked).datum(dataEnd).transition().duration(transitionDuration).call(chunked);
+      },
+    },
+    {
+      label: 'Transition: from point',
+      transition: true,
+      render: function typicalExample(root) {
+        var g = root.append('svg')
+          .attr('width', exampleWidth)
+          .attr('height', exampleHeight)
+          .append('g');
+
+        var chunked = d3.lineChunked()
+          .x(function (d) { return x(d[0]); })
+          .y(function (d) { return y(d[1]); })
+          .defined(function (d) { return d[1] !== null; })
+          .debug(true)
+          .transitionInitial(false);
+
+        var dataStart = [[5, 1]];
+        var dataEnd = [[0, 1], [2, 2], [4, 1], [5, null], [6, 2], [7, null], [8, 2], [9, 0]];
+
+        g.datum(dataStart).call(chunked).datum(dataEnd).transition().duration(transitionDuration).call(chunked);
+      },
+    },
+    {
+      label: 'Transition: from point + extendEnds',
+      transition: true,
+      render: function typicalExample(root) {
+        var g = root.append('svg')
+          .attr('width', exampleWidth)
+          .attr('height', exampleHeight)
+          .append('g');
+
+        var chunked = d3.lineChunked()
+          .x(function (d) { return x(d[0]); })
+          .y(function (d) { return y(d[1]); })
+          .defined(function (d) { return d[1] !== null; })
+          .extendEnds(x.range())
+          .debug(true)
+          .transitionInitial(false);
+
+        var dataStart = [[5, 1]];
+        var dataEnd = [[0, 1], [2, 2], [4, 1], [5, null], [6, 2], [7, null], [8, 2], [9, 0]];
+
+        g.datum(dataStart).call(chunked).datum(dataEnd).transition().duration(transitionDuration).call(chunked);
+      },
+    },
+    {
+      label: 'Transition: line to gap',
+      transition: true,
+      render: function typicalExample(root) {
+        var g = root.append('svg')
+          .attr('width', exampleWidth)
+          .attr('height', exampleHeight)
+          .append('g');
+
+        var chunked = d3.lineChunked()
+          .x(function (d) { return x(d[0]); })
+          .y(function (d) { return y(d[1]); })
+          .defined(function (d) { return d[1] !== null; })
+          .debug(true)
+          .transitionInitial(false);
+
+        var dataStart = [[0, 1], [2, 2], [4, 1], [5, null], [8, 2], [9, 0]];
+        var dataEnd = [[0, 1], [2, 2], [4, 1], [6, 2], [8, 2], [9, 0]];
+
+        g.datum(dataStart).call(chunked);
+        setTimeout(function () {
+          g.datum(dataEnd).transition().duration(transitionDuration).call(chunked);
+        }, transitionDuration / 4);
       },
     },
   ];
