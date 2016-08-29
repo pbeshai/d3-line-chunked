@@ -72,8 +72,8 @@ tape('lineChunked() with empty data', function (t) {
   g.datum(data).call(chunked);
   // console.log(g.node().innerHTML);
 
-  t.equal(0, lengthOfPath(g.select(definedLineClass)));
-  t.equal(0, lengthOfPath(g.select(undefinedLineClass)));
+  t.equal(lengthOfPath(g.select(definedLineClass)), 0);
+  t.equal(lengthOfPath(g.select(undefinedLineClass)), 0);
   t.ok(g.select(definedPointClass).empty());
   t.ok(g.selectAll('clipPath').selectAll('rect').empty());
 
@@ -91,10 +91,10 @@ tape('lineChunked() with one data point', function (t) {
   g.datum(data).call(chunked);
   // console.log(g.node().innerHTML);
 
-  t.equal(1, lengthOfPath(g.select(definedLineClass)));
-  t.equal(1, lengthOfPath(g.select(undefinedLineClass)));
-  t.equal(1, g.select(definedPointClass).size());
-  t.equal(1, g.selectAll('clipPath').selectAll('rect').size());
+  t.equal(lengthOfPath(g.select(definedLineClass)), 1);
+  t.equal(lengthOfPath(g.select(undefinedLineClass)), 1);
+  t.equal(g.select(definedPointClass).size(), 1);
+  t.equal(g.selectAll('clipPath').selectAll('rect').size(), 1);
 
   t.end();
 });
@@ -109,12 +109,12 @@ tape('lineChunked() with many data points', function (t) {
   g.datum(data).call(chunked);
   // console.log(g.node().innerHTML);
 
-  t.equal(3, lengthOfPath(g.select(definedLineClass)));
-  t.equal(3, lengthOfPath(g.select(undefinedLineClass)));
-  t.equal(0, g.select(definedPointClass).size());
+  t.equal(lengthOfPath(g.select(definedLineClass)), 3);
+  t.equal(lengthOfPath(g.select(undefinedLineClass)), 3);
+  t.equal(g.select(definedPointClass).size(), 0);
   const rects = g.selectAll('clipPath').selectAll('rect');
-  t.equal(1, rects.size());
-  t.deepEqual({ x: '0', width: '2', y: '1', height: '1' }, rectDimensions(rects.nodes()[0]));
+  t.equal(rects.size(), 1);
+  t.deepEqual(rectDimensions(rects.nodes()[0]), { x: '0', width: '2', y: '1', height: '1' });
 
   t.end();
 });
@@ -132,15 +132,15 @@ tape('lineChunked() with many data points and some undefined', function (t) {
   g.datum(data).call(chunked);
   // console.log(g.node().innerHTML);
 
-  t.equal(5, lengthOfPath(g.select(definedLineClass)));
-  t.equal(5, lengthOfPath(g.select(undefinedLineClass)));
-  t.equal(1, g.select(definedPointClass).size());
+  t.equal(lengthOfPath(g.select(definedLineClass)), 5);
+  t.equal(lengthOfPath(g.select(undefinedLineClass)), 5);
+  t.equal(g.select(definedPointClass).size(), 1);
 
   const rects = g.selectAll('clipPath').selectAll('rect');
-  t.equal(3, rects.size(), 3);
-  t.deepEqual({ x: '0', width: '1', y: '1', height: '2' }, rectDimensions(rects.nodes()[0]));
-  t.deepEqual({ x: '4', width: '0', y: '1', height: '2' }, rectDimensions(rects.nodes()[1]));
-  t.deepEqual({ x: '6', width: '1', y: '1', height: '2' }, rectDimensions(rects.nodes()[2]));
+  t.equal(rects.size(), 3);
+  t.deepEqual(rectDimensions(rects.nodes()[0]), { x: '0', width: '1', y: '1', height: '2' });
+  t.deepEqual(rectDimensions(rects.nodes()[1]), { x: '4', width: '0', y: '1', height: '2' });
+  t.deepEqual(rectDimensions(rects.nodes()[2]), { x: '6', width: '1', y: '1', height: '2' });
 
   t.end();
 });
@@ -160,15 +160,15 @@ tape('lineChunked() stroke width clipping adjustments', function (t) {
   g.datum(data).call(chunked);
   // console.log(g.node().innerHTML);
 
-  t.equal(5, lengthOfPath(g.select(definedLineClass)));
-  t.equal(5, lengthOfPath(g.select(undefinedLineClass)));
-  t.equal(1, g.select(definedPointClass).size());
+  t.equal(lengthOfPath(g.select(definedLineClass)), 5);
+  t.equal(lengthOfPath(g.select(undefinedLineClass)), 5);
+  t.equal(g.select(definedPointClass).size(), 1);
 
   const rects = g.selectAll('clipPath').selectAll('rect');
-  t.equal(3, rects.size(), 3);
-  t.deepEqual({ x: '-2', width: '3', y: '-1', height: '6' }, rectDimensions(rects.nodes()[0]));
-  t.deepEqual({ x: '4', width: '0', y: '-1', height: '6' }, rectDimensions(rects.nodes()[1]));
-  t.deepEqual({ x: '6', width: '3', y: '-1', height: '6' }, rectDimensions(rects.nodes()[2]));
+  t.equal(rects.size(), 3);
+  t.deepEqual(rectDimensions(rects.nodes()[0]), { x: '-2', width: '3', y: '-1', height: '6' });
+  t.deepEqual(rectDimensions(rects.nodes()[1]), { x: '4', width: '0', y: '-1', height: '6' });
+  t.deepEqual(rectDimensions(rects.nodes()[2]), { x: '6', width: '3', y: '-1', height: '6' });
 
   t.end();
 });
@@ -187,15 +187,15 @@ tape('lineChunked() when context is a transition', function (t) {
   g.datum(data).transition().duration(0).call(chunked);
   // console.log(g.node().innerHTML);
 
-  t.equal(5, lengthOfPath(g.select(definedLineClass)));
-  t.equal(5, lengthOfPath(g.select(undefinedLineClass)));
-  t.equal(1, g.select(definedPointClass).size());
+  t.equal(lengthOfPath(g.select(definedLineClass)), 5);
+  t.equal(lengthOfPath(g.select(undefinedLineClass)), 5);
+  t.equal(g.select(definedPointClass).size(), 1);
 
   const rects = g.selectAll('clipPath').selectAll('rect');
-  t.equal(3, rects.size(), 3);
-  t.deepEqual({ x: '0', width: '1', y: '1', height: '2' }, rectDimensions(rects.nodes()[0]));
-  t.deepEqual({ x: '4', width: '0', y: '1', height: '2' }, rectDimensions(rects.nodes()[1]));
-  t.deepEqual({ x: '6', width: '1', y: '1', height: '2' }, rectDimensions(rects.nodes()[2]));
+  t.equal(rects.size(), 3);
+  t.deepEqual(rectDimensions(rects.nodes()[0]), { x: '0', width: '1', y: '1', height: '2' });
+  t.deepEqual(rectDimensions(rects.nodes()[1]), { x: '4', width: '0', y: '1', height: '2' });
+  t.deepEqual(rectDimensions(rects.nodes()[2]), { x: '6', width: '1', y: '1', height: '2' });
 
   t.end();
 });
@@ -256,10 +256,10 @@ tape('lineChunked() with extendEnds set', function (t) {
   t.equal(undefPathPoints[undefPathPoints.length - 1], 'L10,3');
 
   const rects = g.selectAll('clipPath').selectAll('rect');
-  t.equal(3, rects.size(), 3);
-  t.deepEqual({ x: '1', width: '1', y: '1', height: '2' }, rectDimensions(rects.nodes()[0]));
-  t.deepEqual({ x: '4', width: '0', y: '1', height: '2' }, rectDimensions(rects.nodes()[1]));
-  t.deepEqual({ x: '6', width: '1', y: '1', height: '2' }, rectDimensions(rects.nodes()[2]));
+  t.equal(rects.size(), 3);
+  t.deepEqual(rectDimensions(rects.nodes()[0]), { x: '1', width: '1', y: '1', height: '2' });
+  t.deepEqual(rectDimensions(rects.nodes()[1]), { x: '4', width: '0', y: '1', height: '2' });
+  t.deepEqual(rectDimensions(rects.nodes()[2]), { x: '6', width: '1', y: '1', height: '2' });
 
   t.end();
 });
