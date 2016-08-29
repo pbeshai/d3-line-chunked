@@ -329,7 +329,18 @@ export default function () {
     }
 
     // set up the clipping paths
-    clipPathRects.exit().remove();
+    // animate by shrinking width to 0 and setting x to the mid point
+    function exitRect(rect) {
+      rect
+        .attr('width', 0)
+        .attr('x', d => x(d[0]) + ((x(d[d.length - 1]) - x(d[0])) / 2));
+    }
+
+    if (context !== selection) {
+      clipPathRects.exit().transition(context).call(exitRect).remove();
+    } else {
+      clipPathRects.exit().transition(context).remove();
+    }
 
     // compute the start and end x values for a data point based on maximizing visibility
     // around the middle of the rect.
@@ -365,7 +376,11 @@ export default function () {
     // debug rects should match clipPathRects
     let debugRectsEnter;
     if (debug) {
-      debugRects.exit().remove();
+      if (context !== selection) {
+        debugRects.exit().transition(context).call(exitRect).remove();
+      } else {
+        debugRects.exit().transition(context).remove();
+      }
       debugRectsEnter = debugRects.enter().append('rect')
         .style('fill', 'rgba(255, 0, 0, 0.3)')
         .style('stroke', 'rgba(255, 0, 0, 0.6)')

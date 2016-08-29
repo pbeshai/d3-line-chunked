@@ -295,7 +295,7 @@
       },
     },
     {
-      label: 'Transition: line to gap',
+      label: 'Transition: gap to line',
       transition: true,
       render: function typicalExample(root) {
         var g = root.append('svg')
