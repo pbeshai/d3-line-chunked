@@ -143,6 +143,11 @@ Get or set *transitionInitial*, a boolean flag that indicates whether to perform
 
 The default value is `true`.
 
+<a href="#lineChunked_extendEnds" name="lineChunked_extendEnds">#</a> *lineChunked*.**extendEnds**([*[xMin, xMax]*])
+
+Get or set *extendEnds*, an array `[xMin, xMax]` specifying the minimum and maximum x pixel values
+(e.g., `xScale.range()`). If defined, the undefined line will extend to the values provided,
+otherwise it will end at the last defined points.
 
 
 <a href="#lineChunked_lineStyles" name="lineChunked_lineStyles">#</a> *lineChunked*.**lineStyles**([*lineStyles*])

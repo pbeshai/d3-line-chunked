@@ -115,6 +115,14 @@ export default function () {
   let transitionInitial = true;
 
   /**
+   * An array `[xMin, xMax]` specifying the minimum and maximum x pixel values
+   * (e.g., `xScale.range()`). If defined, the undefined line will extend to
+   * the the values provided, otherwise it will end at the last defined points.
+   */
+  let extendEnds;
+
+
+  /**
    * Helper function to compute the contiguous segments of the data
    * @param {Array} lineData the line data
    * @return {Array} An array of segments (subarrays) of the line data
@@ -229,7 +237,8 @@ export default function () {
   /**
    * Render the paths for segments and gaps
    */
-  function renderPaths(initialRender, context, selection, lineData, segments, [xMin, xMax], [yMin, yMax]) {
+  function renderPaths(initialRender, context, selection, lineData, segments,
+      [xMin, xMax], [yMin, yMax]) {
     let definedPath = selection.select('.d3-line-chunked-defined');
     let undefinedPath = selection.select('.d3-line-chunked-undefined');
 
@@ -238,6 +247,10 @@ export default function () {
 
     // main line function
     const line = d3Line().x(x).y(y).curve(curve);
+
+    // can be different if the user decides to extend ends since we need to recreate the data
+    // in a different format.
+    let undefinedLine = line;
 
     // initial render
     if (definedPath.empty()) {
@@ -254,7 +267,23 @@ export default function () {
 
     // update attached data
     definedPath.datum(lineData);
-    undefinedPath.datum(lineData);
+    let undefinedData = lineData;
+
+    // if the user specifies to extend ends for the undefined line, add points to the line for them.
+    if (extendEnds && lineData.length) {
+      // we have to process the data here since we don't know how to format an input object
+      // we use the [x, y] format of a data point
+      const processedLineData = lineData.map(d => [x(d), y(d)]);
+      undefinedData = [
+        [extendEnds[0], processedLineData[0][1]],
+        ...processedLineData,
+        [extendEnds[1], processedLineData[processedLineData.length - 1][1]],
+      ];
+
+      // this line function works on the processed data (default .x and .y read the [x,y] format)
+      undefinedLine = d3Line().curve(curve);
+    }
+    undefinedPath.datum(undefinedData);
     let clipPathRects = clipPath.selectAll('rect').data(segments);
 
     // get stroke width to avoid having the clip rects clip the stroke
@@ -281,11 +310,19 @@ export default function () {
 
       // have the line load in with a flat y value
       let initialLine = line;
+      let initialUndefinedLine = line;
       if (transitionInitial) {
         initialLine = d3Line().x(x).y(yMax).curve(curve);
+
+        // if the user extends ends, we should use the line that works on that data
+        if (extendEnds) {
+          initialUndefinedLine = d3Line().y(yMax).curve(curve);
+        } else {
+          initialUndefinedLine = initialLine;
+        }
       }
       definedPath.attr('d', initialLine);
-      undefinedPath.attr('d', initialLine);
+      undefinedPath.attr('d', initialUndefinedLine);
     }
 
 
@@ -345,21 +382,21 @@ export default function () {
       .attr('y', clipRectY)
       .attr('height', clipRectHeight);
 
-
-    // update the `d` attribute
-    function dTween(d) {
-      const previous = select(this).attr('d');
-      const current = line(d);
-      return interpolatePath(previous, current);
-    }
-
     if (definedPath.attrTween) {
       // use attrTween is available (in transition)
-      definedPath.attrTween('d', dTween);
-      undefinedPath.attrTween('d', dTween);
+      definedPath.attrTween('d', function dTween(d) {
+        const previous = select(this).attr('d');
+        const current = line(d);
+        return interpolatePath(previous, current);
+      });
+      undefinedPath.attrTween('d', function dTween(d) {
+        const previous = select(this).attr('d');
+        const current = undefinedLine(d);
+        return interpolatePath(previous, current);
+      });
     } else {
       definedPath.attr('d', d => line(d));
-      undefinedPath.attr('d', d => line(d));
+      undefinedPath.attr('d', d => undefinedLine(d));
     }
   }
 
@@ -381,6 +418,10 @@ export default function () {
 
     // determine the extent of the y values
     const yExtent = extent(filteredLineData.map(d => y(d)));
+
+    // determine the extent of the x values to handle stroke-width adjustments on
+    // clipping rects. Do not use extendEnds here since it can clip the line ending
+    // in an unnatural way, it's better to just show the end.
     const xExtent = extent(filteredLineData.map(d => x(d)));
 
     const initialRender = selection.select('.d3-line-chunked-defined').empty();
@@ -495,6 +536,13 @@ export default function () {
     get: () => transitionInitial,
     set: (newValue) => { transitionInitial = newValue; },
     setType: 'boolean',
+  });
+
+  // define `extendEnds([extendEnds])`
+  lineChunked.extendEnds = getterSetter({
+    get: () => extendEnds,
+    set: (newValue) => { extendEnds = newValue; },
+    setType: 'object', // should be an array
   });
 
   return lineChunked;

@@ -67,7 +67,7 @@ var examples = [
     },
   },
   {
-    label: 'Many points, undefined at ends',
+    label: 'Undefined at ends',
     render: function typicalExample(root) {
       var g = root.append('svg')
         .attr('width', exampleWidth)
@@ -79,6 +79,26 @@ var examples = [
         .x(function (d) { return x(d[0]); })
         .y(function (d) { return x(d[1]); })
         .defined(function (d) { return d[1] !== null; });
+
+      var data = [[0, null], [1, null], [2, 1], [3, 3], [4, 2], [5, 2], [6, 0], [7, 1], [8, 1], [9, null], [10, null]];
+
+      g.datum(data).call(chunked);
+    },
+  },
+  {
+    label: 'Undefined at ends + extendEnds',
+    render: function typicalExample(root) {
+      var g = root.append('svg')
+        .attr('width', exampleWidth)
+        .attr('height', exampleHeight)
+        .append('g');
+
+      var chunked = d3.lineChunked()
+        .lineStyles({ 'stroke-width': '10px' })
+        .x(function (d) { return x(d[0]); })
+        .y(function (d) { return x(d[1]); })
+        .defined(function (d) { return d[1] !== null; })
+        .extendEnds(x.range());
 
       var data = [[0, null], [1, null], [2, 1], [3, 3], [4, 2], [5, 2], [6, 0], [7, 1], [8, 1], [9, null], [10, null]];
 
