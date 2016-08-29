@@ -32,6 +32,7 @@
     "eslint": "^3.3.1",
     "eslint-config-airbnb-base": "^5.0.2",
     "eslint-plugin-import": "^1.13.0",
+    "jsdom": "^9.4.2",
     "rollup": "^0.34.10",
     "rollup-plugin-babel": "^2.6.1",
     "rollup-watch": "^2.5.0",
@@ -43,6 +44,7 @@
     "d3-interpolate": "^1.1.1",
     "d3-interpolate-path": "^0.1.0",
     "d3-selection": "^1.0.2",
-    "d3-shape": "^1.0.3"
+    "d3-shape": "^1.0.3",
+    "d3-transition": "^1.0.2"
   }
 }

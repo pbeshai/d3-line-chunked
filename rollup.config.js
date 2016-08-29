@@ -6,7 +6,8 @@ var globals = {
   'd3-interpolate-path': 'd3',
   'd3-shape': 'd3',
   'd3-selection': 'd3',
-}
+  'd3-transition': 'd3',
+};
 
 export default {
   entry: 'index.js',
