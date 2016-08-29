@@ -355,7 +355,7 @@ export default function () {
     } else {
       nextVisibleArea = segments.map(d => {
         const xStart = x(d[0]);
-        const xEnd = x(d[d.length - 1]) + xStart;
+        const xEnd = x(d[d.length - 1]);
         return [xStart, xEnd];
       });
     }

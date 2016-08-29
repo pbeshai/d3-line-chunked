@@ -344,6 +344,42 @@
         }, transitionDuration / 4);
       },
     },
+    {
+      label: 'Transition: end segment overlap',
+      transition: true,
+      render: function typicalExample(root) {
+        var g = root.append('svg')
+          .attr('width', exampleWidth)
+          .attr('height', exampleHeight)
+          .append('g');
+
+        var x = d3
+          .scaleLinear()
+          .domain([3, 19])
+          .range([10, exampleWidth - 10]);
+
+        var y = d3
+          .scaleLinear()
+          .domain([2, 230])
+          .range([exampleHeight - 10, 10]);
+
+        var chunked = d3.lineChunked()
+          .x(function (d) { return x(d.x); })
+          .y(function (d) { return y(d.y); })
+          .defined(d => d.y != null)
+          .debug(transitionDebug)
+          .transitionInitial(false);
+
+        var dataStart = [{"x":3,"y":13,"v":160},{"x":4,"y":230,"v":93},{"x":5,"v":149},{"x":6,"y":4,"v":207},{"x":7,"y":21,"v":96},{"x":8,"y":2,"v":128},{"x":9,"y":6,"v":151},{"x":10,"y":14,"v":224},{"x":11,"v":70},{"x":12,"y":36,"v":104},{"x":13,"y":9,"v":190},{"x":14,"v":202},{"x":15,"y":5,"v":67},{"x":16,"y":5,"v":177},{"x":17,"y":25,"v":79},{"x":18,"y":3,"v":201},{"x":19,"y":34,"v":125}];
+        var dataEnd = [{"x":3,"y":63,"v":110},{"x":4,"y":16,"v":133},{"x":5,"y":45,"v":143},{"x":6,"y":3,"v":284},{"x":7,"y":6,"v":150},{"x":8,"y":22,"v":233},{"x":9,"v":207},{"x":10,"y":173,"v":109},{"x":11,"y":110,"v":80},{"x":12,"y":17,"v":133},{"x":13,"y":11,"v":192},{"x":14,"y":2,"v":131},{"x":15,"v":117},{"x":16,"y":149,"v":111},{"x":17,"y":99,"v":149},{"x":18,"y":20,"v":145},{"x":19,"y":10,"v":127}];
+
+        g.datum(dataStart).call(chunked);
+        setTimeout(function () {
+          g.datum(dataEnd).transition().duration(transitionDuration).call(chunked);
+        }, transitionDuration / 4);
+      },
+    },
+
   ];
 
 
@@ -372,7 +408,6 @@
     .attr('checked', transitionDebug ? true : null)
     .on('change', function () {
       transitionDebug = this.checked;
-      console.log(transitionDebug, this.value, this.checked)
     });
   transitionDebugControl.append('span')
     .text('Debug');
