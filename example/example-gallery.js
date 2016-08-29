@@ -9,7 +9,8 @@
   var x = d3.scaleLinear().domain([0, 10]).range([10, exampleWidth - 10]);
   var y = d3.scaleLinear().domain([0, 4]).range([exampleHeight - 10, 10]);
 
-  var transitionDuration = 5000;
+  var transitionDuration = 500;
+  var transitionDebug = false;
 
   var examples = [
     {
@@ -209,7 +210,7 @@
           .x(function (d) { return x(d[0]); })
           .y(function (d) { return y(d[1]); })
           .defined(function (d) { return d[1] !== null; })
-          .debug(true)
+          .debug(transitionDebug)
           .transitionInitial(true);
 
         var data = [[0, 1], [2, 2], [4, 1], [5, null], [6, 2], [7, null], [8, 2], [9, 0]];
@@ -230,13 +231,16 @@
           .x(function (d) { return x(d[0]); })
           .y(function (d) { return y(d[1]); })
           .defined(function (d) { return d[1] !== null; })
-          .debug(true)
+          .debug(transitionDebug)
           .transitionInitial(false);
 
         var dataStart = [[0, 1], [2, 2], [4, 1], [6, 2], [8, 2], [9, 0]];
         var dataEnd = [[0, 1], [2, 2], [4, 1], [5, null], [6, 2], [7, null], [8, 2], [9, 0]];
 
-        g.datum(dataStart).call(chunked).datum(dataEnd).transition().duration(transitionDuration).call(chunked);
+        g.datum(dataStart).call(chunked);
+        setTimeout(function () {
+          g.datum(dataEnd).transition().duration(transitionDuration).call(chunked);
+        }, transitionDuration / 4);
       },
     },
     {
@@ -252,13 +256,16 @@
           .x(function (d) { return x(d[0]); })
           .y(function (d) { return y(d[1]); })
           .defined(function (d) { return d[1] !== null; })
-          .debug(true)
+          .debug(transitionDebug)
           .transitionInitial(false);
 
         var dataStart = [[5, 1]];
         var dataEnd = [[0, 1], [2, 2], [4, 1], [5, null], [6, 2], [7, null], [8, 2], [9, 0]];
 
-        g.datum(dataStart).call(chunked).datum(dataEnd).transition().duration(transitionDuration).call(chunked);
+        g.datum(dataStart).call(chunked);
+        setTimeout(function () {
+          g.datum(dataEnd).transition().duration(transitionDuration).call(chunked);
+        }, transitionDuration / 4);
       },
     },
     {
@@ -275,13 +282,16 @@
           .y(function (d) { return y(d[1]); })
           .defined(function (d) { return d[1] !== null; })
           .extendEnds(x.range())
-          .debug(true)
+          .debug(transitionDebug)
           .transitionInitial(false);
 
         var dataStart = [[5, 1]];
         var dataEnd = [[0, 1], [2, 2], [4, 1], [5, null], [6, 2], [7, null], [8, 2], [9, 0]];
 
-        g.datum(dataStart).call(chunked).datum(dataEnd).transition().duration(transitionDuration).call(chunked);
+        g.datum(dataStart).call(chunked);
+        setTimeout(function () {
+          g.datum(dataEnd).transition().duration(transitionDuration).call(chunked);
+        }, transitionDuration / 4);
       },
     },
     {
@@ -297,7 +307,7 @@
           .x(function (d) { return x(d[0]); })
           .y(function (d) { return y(d[1]); })
           .defined(function (d) { return d[1] !== null; })
-          .debug(true)
+          .debug(transitionDebug)
           .transitionInitial(false);
 
         var dataStart = [[0, 1], [2, 2], [4, 1], [5, null], [8, 2], [9, 0]];
@@ -322,7 +332,7 @@
           .x(function (d) { return x(d[0]); })
           .y(function (d) { return y(d[1]); })
           .isNext(function (prev, curr) { return curr[0] === prev[0] + 1; })
-          .debug(true)
+          .debug(transitionDebug)
           .transitionInitial(false);
 
         var dataStart = [[0, 1], [1, 2], [7, 0], [8, 1], [9, 0], [10, 1]];
@@ -340,8 +350,25 @@
 
   // render the gallery
   var galleryRoot = d3.select('.example-gallery');
+
+  // append transition timing slider
+  var transitionSlider = galleryRoot.append('div');
+  transitionSlider.append('strong').text('Transition Duration')
+  var transitionSliderValue = transitionSlider.append('span').text(transitionDuration)
+    .style('margin-left', '10px');
+  transitionSlider.append('input')
+    .style('display', 'block')
+    .attr('type', 'range')
+    .attr('min', 0)
+    .attr('max', 5000)
+    .attr('value', transitionDuration)
+    .on('change', function (d) {
+      transitionDuration = parseFloat(this.value);
+      transitionSliderValue.text(transitionDuration);
+    });
+
   examples.forEach(function (example) {
-    var div = galleryRoot.append('div');
+    var div = galleryRoot.append('div').attr('class', 'example');
 
     if (example.transition) {
       div.append('button')
