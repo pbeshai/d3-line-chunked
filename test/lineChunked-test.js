@@ -51,6 +51,7 @@ tape('lineChunked() getter and setters work', function (t) {
   t.deepEqual(chunked.pointStyles({ fill: 'red' }).pointStyles(), { fill: 'red' }, 'pointStyles sets object');
   t.deepEqual(chunked.pointAttrs({ fill: 'red' }).pointAttrs(), { fill: 'red' }, 'pointAttrs sets object');
   t.equal(chunked.transitionInitial(false).transitionInitial(), false, 'transitionInitial sets boolean');
+  t.deepEqual(chunked.extendEnds([5, 20]).extendEnds(), [5, 20], 'extendEnds sets array');
 
   t.end();
 });
