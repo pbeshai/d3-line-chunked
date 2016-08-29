@@ -257,14 +257,20 @@ export default function () {
     undefinedPath.datum(lineData);
     let clipPathRects = clipPath.selectAll('rect').data(segments);
 
+    // get stroke width to avoid having the clip rects clip the stroke
+    // See https://github.com/pbeshai/d3-line-chunked/issues/2
+    const strokeWidth = parseFloat(lineStyles['stroke-width'] || definedPath.style('stroke-width') || lineAttrs['stroke-width']);
+    const strokeWidthClipAdjustment = Math.ceil(strokeWidth / 2);
+    const clipRectY = yMin - strokeWidthClipAdjustment;
+    const clipRectHeight = (yMax + strokeWidthClipAdjustment) - (yMin - strokeWidthClipAdjustment);
 
     // set up the clipping paths
     clipPathRects.exit().remove();
     const clipPathRectsEnter = clipPathRects.enter().append('rect')
       .attr('x', d => x(d[0]))
       .attr('width', 0)
-      .attr('y', yMin)
-      .attr('height', yMax - yMin);
+      .attr('y', clipRectY)
+      .attr('height', clipRectHeight);
 
     // on initial load, have the width already at max and the line already at full width
     if (initialRender) {
@@ -315,8 +321,8 @@ export default function () {
     clipPathRects
       .attr('x', d => x(d[0]))
       .attr('width', d => x(d[d.length - 1]) - x(d[0]))
-      .attr('y', yMin)
-      .attr('height', yMax - yMin);
+      .attr('y', clipRectY)
+      .attr('height', clipRectHeight);
 
 
     // update the `d` attribute
