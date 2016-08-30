@@ -444,7 +444,6 @@ export default function () {
     definedPath.attr('clip-path', `url(#${getClipPathId(false)})`);
 
     // update attached data
-    definedPath.datum(lineData);
     let undefinedData = lineData;
 
     // if the user specifies to extend ends for the undefined line, add points to the line for them.
@@ -461,7 +460,6 @@ export default function () {
       // this line function works on the processed data (default .x and .y read the [x,y] format)
       undefinedLine = d3Line().curve(curve);
     }
-    undefinedPath.datum(undefinedData);
 
     // handle animations for initial render
     if (initialRender) {
@@ -478,8 +476,8 @@ export default function () {
           initialUndefinedLine = initialLine;
         }
       }
-      definedPath.attr('d', initialLine);
-      undefinedPath.attr('d', initialUndefinedLine);
+      definedPath.attr('d', () => initialLine(lineData));
+      undefinedPath.attr('d', () => initialUndefinedLine(undefinedData));
     }
 
 
@@ -511,19 +509,19 @@ export default function () {
 
     if (definedPath.attrTween) {
       // use attrTween is available (in transition)
-      definedPath.attrTween('d', function dTween(d) {
+      definedPath.attrTween('d', function dTween() {
         const previous = select(this).attr('d');
-        const current = line(d);
+        const current = line(lineData);
         return interpolatePath(previous, current);
       });
-      undefinedPath.attrTween('d', function dTween(d) {
+      undefinedPath.attrTween('d', function dTween() {
         const previous = select(this).attr('d');
-        const current = undefinedLine(d);
+        const current = undefinedLine(undefinedData);
         return interpolatePath(previous, current);
       });
     } else {
-      definedPath.attr('d', d => line(d));
-      undefinedPath.attr('d', d => undefinedLine(d));
+      definedPath.attr('d', () => line(lineData));
+      undefinedPath.attr('d', () => undefinedLine(undefinedData));
     }
   }
 
