@@ -249,6 +249,8 @@ export default function () {
 
   function renderClipRects(initialRender, context, selection, lineData, segments,
       [xMin, xMax], [yMin, yMax]) {
+    const isTransition = context !== selection;
+
     const clipPathId = getClipPathId(true);
     let clipPath = selection.select('clipPath');
     let gDebug = selection.select('.d3-line-chunked-debug');
@@ -288,106 +290,100 @@ export default function () {
     // if no clip rects, the whole area is visible.
     let visibleArea;
 
-    // select previous rects
-    const previousRects = clipPath.selectAll('rect').nodes();
-    // no previous rects = visible area is everything
-    if (!previousRects.length) {
-      visibleArea = [[xMin, xMax]];
-    } else {
-      visibleArea = previousRects.map(rect => {
-        const selectedRect = select(rect);
-        const xStart = parseFloat(selectedRect.attr('x'));
-        const xEnd = parseFloat(selectedRect.attr('width')) + xStart;
-        return [xStart, xEnd];
-      });
-    }
+    if (isTransition) {
+      // select previous rects
+      const previousRects = clipPath.selectAll('rect').nodes();
+      // no previous rects = visible area is everything
+      if (!previousRects.length) {
+        visibleArea = [[xMin, xMax]];
+      } else {
+        visibleArea = previousRects.map(rect => {
+          const selectedRect = select(rect);
+          const xStart = parseFloat(selectedRect.attr('x'));
+          const xEnd = parseFloat(selectedRect.attr('width')) + xStart;
+          return [xStart, xEnd];
+        });
+      }
 
-    // set up the clipping paths
-    // animate by shrinking width to 0 and setting x to the mid point
-    let nextVisibleArea;
-    if (!segments.length) {
-      nextVisibleArea = [[0, 0]];
-    } else {
-      nextVisibleArea = segments.map(d => {
+      // set up the clipping paths
+      // animate by shrinking width to 0 and setting x to the mid point
+      let nextVisibleArea;
+      if (!segments.length) {
+        nextVisibleArea = [[0, 0]];
+      } else {
+        nextVisibleArea = segments.map(d => {
+          const xStart = x(d[0]);
+          const xEnd = x(d[d.length - 1]);
+          return [xStart, xEnd];
+        });
+      }
+
+      // compute the start and end x values for a data point based on maximizing visibility
+      // around the middle of the rect.
+      function visibleStartEnd(d, visibleArea) { // eslint-disable-line no-inner-declarations
         const xStart = x(d[0]);
         const xEnd = x(d[d.length - 1]);
-        return [xStart, xEnd];
-      });
-    }
+        const xMid = xStart + ((xEnd - xStart) / 2);
+        const visArea = visibleArea.find(area => area[0] <= xMid && xMid <= area[1]);
 
-    // compute the start and end x values for a data point based on maximizing visibility
-    // around the middle of the rect.
-    function visibleStartEnd(d, visibleArea) {
-      const xStart = x(d[0]);
-      const xEnd = x(d[d.length - 1]);
-      const xMid = xStart + ((xEnd - xStart) / 2);
-      const visArea = visibleArea.find(area => area[0] <= xMid && xMid <= area[1]);
+        // set width to overlapping visible area
+        if (visArea) {
+          return [Math.max(visArea[0], xStart), Math.min(xEnd, visArea[1])];
+        }
 
-      // set width to overlapping visible area
-      if (visArea) {
-        return [Math.max(visArea[0], xStart), Math.min(xEnd, visArea[1])];
+        // return xEnd - xStart;
+        return [xMid, xMid];
       }
 
-      // return xEnd - xStart;
-      return [xMid, xMid];
-    }
+      function exitRect(rect) { // eslint-disable-line no-inner-declarations
+        rect
+          .attr('x', d => visibleStartEnd(d, nextVisibleArea)[0])
+          .attr('width', d => {
+            const [xStart, xEnd] = visibleStartEnd(d, nextVisibleArea);
+            return xEnd - xStart;
+          });
+      }
 
-    function exitRect(rect) {
-      rect
-        .attr('x', d => visibleStartEnd(d, nextVisibleArea)[0])
-        .attr('width', d => {
-          const [xStart, xEnd] = visibleStartEnd(d, nextVisibleArea);
-          return xEnd - xStart;
-        });
-    }
+      function enterRect(rect) { // eslint-disable-line no-inner-declarations
+        rect
+          .attr('x', d => visibleStartEnd(d, visibleArea)[0])
+          .attr('width', d => {
+            const [xStart, xEnd] = visibleStartEnd(d, visibleArea);
+            return xEnd - xStart;
+          })
+          .attr('y', clipRectY)
+          .attr('height', clipRectHeight);
+      }
 
-    if (context !== selection) {
       clipPathRects.exit().transition(context).call(exitRect).remove();
-    } else {
-      clipPathRects.exit().transition(context).remove();
-    }
-
-
-    function enterRect(rect) {
-      rect
-        .attr('x', d => visibleStartEnd(d, visibleArea)[0])
-        .attr('width', d => {
-          const [xStart, xEnd] = visibleStartEnd(d, visibleArea);
-          return xEnd - xStart;
-        })
-        .attr('y', clipRectY)
-        .attr('height', clipRectHeight);
-    }
-
-    const clipPathRectsEnter = clipPathRects.enter().append('rect').call(enterRect);
-
-    // debug rects should match clipPathRects
-    let debugRectsEnter;
-    if (debug) {
-      if (context !== selection) {
-        debugRects.exit().transition(context).call(exitRect).remove();
-      } else {
-        debugRects.exit().transition(context).remove();
-      }
-      debugRectsEnter = debugRects.enter().append('rect')
-        .style('fill', 'rgba(255, 0, 0, 0.3)')
-        .style('stroke', 'rgba(255, 0, 0, 0.6)')
-        .call(enterRect);
-    }
-
-    // merge in updating rects with entering
-    clipPathRects = clipPathRects.merge(clipPathRectsEnter);
-
-    if (debug) {
-      debugRects = debugRects.merge(debugRectsEnter);
-    }
-
-    // handle transition
-    if (context !== selection) {
+      const clipPathRectsEnter = clipPathRects.enter().append('rect').call(enterRect);
+      clipPathRects = clipPathRects.merge(clipPathRectsEnter);
       clipPathRects = clipPathRects.transition(context);
 
+      // debug rects should match clipPathRects
       if (debug) {
+        debugRects.exit().transition(context).call(exitRect).remove();
+        const debugRectsEnter = debugRects.enter().append('rect')
+          .style('fill', 'rgba(255, 0, 0, 0.3)')
+          .style('stroke', 'rgba(255, 0, 0, 0.6)')
+          .call(enterRect);
+
+        debugRects = debugRects.merge(debugRectsEnter);
         debugRects = debugRects.transition(context);
+      }
+
+    // not in transition
+    } else {
+      clipPathRects.exit().remove();
+      const clipPathRectsEnter = clipPathRects.enter().append('rect');
+      clipPathRects = clipPathRects.merge(clipPathRectsEnter);
+
+      if (debug) {
+        debugRects.exit().remove();
+        const debugRectsEnter = debugRects.enter().append('rect')
+          .style('fill', 'rgba(255, 0, 0, 0.3)')
+          .style('stroke', 'rgba(255, 0, 0, 0.6)');
+        debugRects = debugRects.merge(debugRectsEnter);
       }
     }
 
