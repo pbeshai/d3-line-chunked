@@ -238,23 +238,19 @@ export default function () {
       .attr('cy', d => y(d.data));
   }
 
-  /**
-   * Render the paths for segments and gaps
-   */
-  function renderPaths(initialRender, context, selection, lineData, segments,
+  function getClipPathId(increment) {
+    const id = `d3-line-chunked-clip-path-${counter}`;
+    if (increment) {
+      counter += 1;
+    }
+
+    return id;
+  }
+
+  function renderClipRects(initialRender, context, selection, lineData, segments,
       [xMin, xMax], [yMin, yMax]) {
-    let definedPath = selection.select('.d3-line-chunked-defined');
-    let undefinedPath = selection.select('.d3-line-chunked-undefined');
-
-    const clipPathId = `d3-line-chunked-clip-path-${counter++}`; // TODO: dynamic
+    const clipPathId = getClipPathId(true);
     let clipPath = selection.select('clipPath');
-
-    // main line function
-    const line = d3Line().x(x).y(y).curve(curve);
-
-    // can be different if the user decides to extend ends since we need to recreate the data
-    // in a different format.
-    let undefinedLine = line;
     let gDebug = selection.select('.d3-line-chunked-debug');
 
     // set up debug group
@@ -265,9 +261,7 @@ export default function () {
     }
 
     // initial render
-    if (definedPath.empty()) {
-      definedPath = selection.append('path');
-      undefinedPath = selection.append('path');
+    if (clipPath.empty()) {
       clipPath = selection.append('defs')
         .append('clipPath')
         .attr('id', clipPathId);
@@ -275,27 +269,6 @@ export default function () {
       clipPath.attr('id', clipPathId);
     }
 
-    definedPath.attr('clip-path', `url(#${clipPathId})`);
-
-    // update attached data
-    definedPath.datum(lineData);
-    let undefinedData = lineData;
-
-    // if the user specifies to extend ends for the undefined line, add points to the line for them.
-    if (extendEnds && lineData.length) {
-      // we have to process the data here since we don't know how to format an input object
-      // we use the [x, y] format of a data point
-      const processedLineData = lineData.map(d => [x(d), y(d)]);
-      undefinedData = [
-        [extendEnds[0], processedLineData[0][1]],
-        ...processedLineData,
-        [extendEnds[1], processedLineData[processedLineData.length - 1][1]],
-      ];
-
-      // this line function works on the processed data (default .x and .y read the [x,y] format)
-      undefinedLine = d3Line().curve(curve);
-    }
-    undefinedPath.datum(undefinedData);
     let clipPathRects = clipPath.selectAll('rect').data(segments);
     let debugRects;
     if (debug) {
@@ -305,7 +278,7 @@ export default function () {
     // get stroke width to avoid having the clip rects clip the stroke
     // See https://github.com/pbeshai/d3-line-chunked/issues/2
     const strokeWidth = parseFloat(lineStyles['stroke-width']
-      || definedPath.style('stroke-width')
+      || select('.d3-line-chunked-defined').style('stroke-width')
       || lineAttrs['stroke-width']);
     const strokeWidthClipAdjustment = strokeWidth;
     const clipRectY = yMin - strokeWidthClipAdjustment;
@@ -314,6 +287,7 @@ export default function () {
     // compute the currently visible area pairs of [xStart, xEnd] for each clip rect
     // if no clip rects, the whole area is visible.
     let visibleArea;
+
     // select previous rects
     const previousRects = clipPath.selectAll('rect').nodes();
     // no previous rects = visible area is everything
@@ -328,7 +302,18 @@ export default function () {
       });
     }
 
-
+    // set up the clipping paths
+    // animate by shrinking width to 0 and setting x to the mid point
+    let nextVisibleArea;
+    if (!segments.length) {
+      nextVisibleArea = [[0, 0]];
+    } else {
+      nextVisibleArea = segments.map(d => {
+        const xStart = x(d[0]);
+        const xEnd = x(d[d.length - 1]);
+        return [xStart, xEnd];
+      });
+    }
 
     // compute the start and end x values for a data point based on maximizing visibility
     // around the middle of the rect.
@@ -345,19 +330,6 @@ export default function () {
 
       // return xEnd - xStart;
       return [xMid, xMid];
-    }
-
-    // set up the clipping paths
-    // animate by shrinking width to 0 and setting x to the mid point
-    let nextVisibleArea;
-    if (!segments.length) {
-      nextVisibleArea = [[0, 0]];
-    } else {
-      nextVisibleArea = segments.map(d => {
-        const xStart = x(d[0]);
-        const xEnd = x(d[d.length - 1]);
-        return [xStart, xEnd];
-      });
     }
 
     function exitRect(rect) {
@@ -389,7 +361,6 @@ export default function () {
 
     const clipPathRectsEnter = clipPathRects.enter().append('rect').call(enterRect);
 
-
     // debug rects should match clipPathRects
     let debugRectsEnter;
     if (debug) {
@@ -403,6 +374,98 @@ export default function () {
         .style('stroke', 'rgba(255, 0, 0, 0.6)')
         .call(enterRect);
     }
+
+    // merge in updating rects with entering
+    clipPathRects = clipPathRects.merge(clipPathRectsEnter);
+
+    if (debug) {
+      debugRects = debugRects.merge(debugRectsEnter);
+    }
+
+    // handle transition
+    if (context !== selection) {
+      clipPathRects = clipPathRects.transition(context);
+
+      if (debug) {
+        debugRects = debugRects.transition(context);
+      }
+    }
+
+    // after transition, update the clip rect dimensions
+    function updateRect(rect) {
+      rect.attr('x', d => {
+        // if at the edge, adjust for stroke width
+        const val = x(d[0]);
+        if (val === xMin) {
+          return val - strokeWidthClipAdjustment;
+        }
+        return val;
+      })
+      .attr('width', d => {
+        // if at the edge, adjust for stroke width to prevent clipping it
+        let valMin = x(d[0]);
+        let valMax = x(d[d.length - 1]);
+        if (valMin === xMin) {
+          valMin -= strokeWidthClipAdjustment;
+        }
+        if (valMax === xMax) {
+          valMax += strokeWidthClipAdjustment;
+        }
+
+        return valMax - valMin;
+      })
+      .attr('y', clipRectY)
+      .attr('height', clipRectHeight);
+    }
+
+    clipPathRects.call(updateRect);
+    if (debug) {
+      debugRects.call(updateRect);
+    }
+  }
+
+  /**
+   * Render the paths for segments and gaps
+   */
+  function renderPaths(initialRender, context, selection, lineData, segments,
+      [xMin, xMax], [yMin, yMax]) { // eslint-disable-line no-unused-vars
+    let definedPath = selection.select('.d3-line-chunked-defined');
+    let undefinedPath = selection.select('.d3-line-chunked-undefined');
+
+    // main line function
+    const line = d3Line().x(x).y(y).curve(curve);
+
+    // can be different if the user decides to extend ends since we need to recreate the data
+    // in a different format.
+    let undefinedLine = line;
+
+    // initial render
+    if (definedPath.empty()) {
+      definedPath = selection.append('path');
+      undefinedPath = selection.append('path');
+    }
+
+    definedPath.attr('clip-path', `url(#${getClipPathId(false)})`);
+
+    // update attached data
+    definedPath.datum(lineData);
+    let undefinedData = lineData;
+
+    // if the user specifies to extend ends for the undefined line, add points to the line for them.
+    if (extendEnds && lineData.length) {
+      // we have to process the data here since we don't know how to format an input object
+      // we use the [x, y] format of a data point
+      const processedLineData = lineData.map(d => [x(d), y(d)]);
+      undefinedData = [
+        [extendEnds[0], processedLineData[0][1]],
+        ...processedLineData,
+        [extendEnds[1], processedLineData[processedLineData.length - 1][1]],
+      ];
+
+      // this line function works on the processed data (default .x and .y read the [x,y] format)
+      undefinedLine = d3Line().curve(curve);
+    }
+    undefinedPath.datum(undefinedData);
 
     // handle animations for initial render
     if (initialRender) {
@@ -444,56 +507,10 @@ export default function () {
     });
     undefinedPath.classed('d3-line-chunked-undefined', true);
 
-    // merge in updating rects with entering
-    clipPathRects = clipPathRects.merge(clipPathRectsEnter);
-
-    if (debug) {
-      debugRects = debugRects.merge(debugRectsEnter);
-    }
-
     // handle transition
     if (context !== selection) {
       definedPath = definedPath.transition(context);
       undefinedPath = undefinedPath.transition(context);
-      clipPathRects = clipPathRects.transition(context);
-
-      if (debug) {
-        debugRects = debugRects.transition(context);
-      }
-    }
-
-    // after transition, update the clip rect dimensions
-    function updateRect(rect) {
-      rect.attr('x', d => {
-        // if at the edge, adjust for stroke width
-        const val = x(d[0]);
-        if (val === xMin) {
-          return val - strokeWidthClipAdjustment;
-        }
-        return val;
-      })
-      .attr('width', d => {
-        // if at the edge, adjust for stroke width to prevent clipping it
-        let valMin = x(d[0]);
-        let valMax = x(d[d.length - 1]);
-        if (valMin === xMin) {
-          valMin -= strokeWidthClipAdjustment;
-        }
-        if (valMax === xMax) {
-          valMax += strokeWidthClipAdjustment;
-        }
-
-        return valMax - valMin;
-      })
-      .attr('y', clipRectY)
-      .attr('height', clipRectHeight);
-    }
-    clipPathRects
-      .call(updateRect);
-
-
-    if (debug) {
-      debugRects.call(updateRect);
     }
 
     if (definedPath.attrTween) {
@@ -540,7 +557,10 @@ export default function () {
 
     const initialRender = selection.select('.d3-line-chunked-defined').empty();
     renderCircles(initialRender, context, selection, points);
-    renderPaths(initialRender, context, selection, filteredLineData, segments, xExtent, yExtent);
+    renderPaths(initialRender, context, selection, filteredLineData, segments,
+      xExtent, yExtent);
+    renderClipRects(initialRender, context, selection, filteredLineData, segments,
+      xExtent, yExtent);
   }
 
   // ------------------------------------------------
