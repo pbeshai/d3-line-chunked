@@ -6,12 +6,12 @@
   "keywords": [
     "d3",
     "d3-module",
-    "plugin"
+    "plugin",
     "d3-line-chunked",
     "line",
     "time series",
     "chart",
-    "svg",
+    "svg"
   ],
   "license": "BSD-3-Clause",
   "main": "build/d3-line-chunked.js",
