@@ -243,7 +243,7 @@ tape('lineChunked() with extendEnds set', function (t) {
   g.datum(data).call(chunked);
   // console.log(g.node().innerHTML);
 
-  t.equal(lengthOfPath(g.select(definedLineClass)), 5);
+  t.equal(lengthOfPath(g.select(definedLineClass)), 7);
   t.equal(lengthOfPath(g.select(undefinedLineClass)), 7);
   t.equal(g.select(definedPointClass).size(), 1);
 
