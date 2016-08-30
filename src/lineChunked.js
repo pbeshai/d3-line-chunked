@@ -122,6 +122,14 @@ export default function () {
   let extendEnds;
 
   /**
+   * Function to determine how to access the line data array from the passed in data
+   * Defaults to the identity data => data.
+   * @param {Any} data line dataset
+   * @return {Array} The array of data points for that given line
+   */
+  let accessData = data => data;
+
+  /**
    * A flag specifying whether to render in debug mode or not.
    */
   let debug = false;
@@ -170,11 +178,12 @@ export default function () {
   /**
    * Render the points for when segments have length 1.
    */
-  function renderCircles(initialRender, context, selection, points) {
-    let circles = selection.selectAll('circle').data(points, d => d.id);
+  function renderCircles(initialRender, transition, context, root, points, evaluatedAttrs,
+      evaluatedStyles) {
+    let circles = root.selectAll('circle').data(points, d => d.id);
 
     // EXIT
-    if (context !== selection) {
+    if (transition) {
       const duration = context.duration();
 
       circles.exit()
@@ -191,9 +200,10 @@ export default function () {
 
     // apply user-provided attrs, using attributes from current line if not provided
     const combinedAttrs = Object.assign({
-      fill: lineAttrs.stroke,
-      r: lineAttrs['stroke-width'] == null ? undefined : parseFloat(lineAttrs['stroke-width']) + 1,
-    }, pointAttrs);
+      fill: evaluatedAttrs.line.stroke,
+      r: evaluatedAttrs.line['stroke-width'] == null ? undefined :
+        parseFloat(evaluatedAttrs.line['stroke-width']) + 1,
+    }, evaluatedAttrs.point);
     Object.keys(combinedAttrs).forEach(key => {
       circlesEnter.attr(key, combinedAttrs[key]);
     });
@@ -201,8 +211,9 @@ export default function () {
     combinedAttrs.r = parseFloat(combinedAttrs.r);
 
     // apply user-provided styles, using attributes from current line if not provided
-    const combinedStyles = Object.assign(pointAttrs.fill == null ? { fill: lineStyles.stroke } : {},
-      pointStyles);
+    const combinedStyles = Object.assign(evaluatedAttrs.point.fill == null ?
+        { fill: evaluatedStyles.line.stroke } : {},
+      evaluatedStyles.point);
     Object.keys(combinedStyles).forEach(key => {
       circlesEnter.style(key, combinedStyles[key]);
     });
@@ -215,7 +226,7 @@ export default function () {
 
 
     // handle with transition
-    if ((!initialRender || (initialRender && transitionInitial)) && context !== selection) {
+    if ((!initialRender || (initialRender && transitionInitial)) && transition) {
       const duration = context.duration();
       const enterDuration = duration * 0.15;
       // delay sizing up the radius until after the line transition
@@ -230,7 +241,7 @@ export default function () {
 
 
     // UPDATE
-    if (context !== selection) {
+    if (transition) {
       circles = circles.transition(context);
     }
     circles.attr('r', combinedAttrs.r)
@@ -247,24 +258,22 @@ export default function () {
     return id;
   }
 
-  function renderClipRects(initialRender, context, selection, lineData, segments,
-      [xMin, xMax], [yMin, yMax]) {
-    const isTransition = context !== selection;
-
+  function renderClipRects(initialRender, transition, context, root, lineData,
+      segments, [xMin, xMax], [yMin, yMax], evaluatedAttrs, evaluatedStyles) {
     const clipPathId = getClipPathId(true);
-    let clipPath = selection.select('clipPath');
-    let gDebug = selection.select('.d3-line-chunked-debug');
+    let clipPath = root.select('clipPath');
+    let gDebug = root.select('.d3-line-chunked-debug');
 
     // set up debug group
     if (debug && gDebug.empty()) {
-      gDebug = selection.append('g').classed('d3-line-chunked-debug', true);
+      gDebug = root.append('g').classed('d3-line-chunked-debug', true);
     } else if (!debug && !gDebug.empty()) {
       gDebug.remove();
     }
 
     // initial render
     if (clipPath.empty()) {
-      clipPath = selection.append('defs')
+      clipPath = root.append('defs')
         .append('clipPath')
         .attr('id', clipPathId);
     } else {
@@ -279,9 +288,9 @@ export default function () {
 
     // get stroke width to avoid having the clip rects clip the stroke
     // See https://github.com/pbeshai/d3-line-chunked/issues/2
-    const strokeWidth = parseFloat(lineStyles['stroke-width']
-      || selection.select('.d3-line-chunked-defined').style('stroke-width')
-      || lineAttrs['stroke-width']);
+    const strokeWidth = parseFloat(evaluatedStyles.line['stroke-width']
+      || root.select('.d3-line-chunked-defined').style('stroke-width')
+      || evaluatedAttrs.line['stroke-width']);
     const strokeWidthClipAdjustment = strokeWidth;
     const clipRectY = yMin - strokeWidthClipAdjustment;
     const clipRectHeight = (yMax + strokeWidthClipAdjustment) - (yMin - strokeWidthClipAdjustment);
@@ -290,7 +299,7 @@ export default function () {
     // if no clip rects, the whole area is visible.
     let visibleArea;
 
-    if (isTransition) {
+    if (transition) {
       // select previous rects
       const previousRects = clipPath.selectAll('rect').nodes();
       // no previous rects = visible area is everything
@@ -423,18 +432,18 @@ export default function () {
   /**
    * Render the paths for segments and gaps
    */
-  function renderPaths(initialRender, context, selection, lineData, segments,
-      [xMin, xMax], [yMin, yMax]) { // eslint-disable-line no-unused-vars
-    let definedPath = selection.select('.d3-line-chunked-defined');
-    let undefinedPath = selection.select('.d3-line-chunked-undefined');
+  function renderPaths(initialRender, transition, context, root, lineData,
+      segments, [xMin, xMax], [yMin, yMax], evaluatedAttrs, evaluatedStyles) { // eslint-disable-line
+    let definedPath = root.select('.d3-line-chunked-defined');
+    let undefinedPath = root.select('.d3-line-chunked-undefined');
 
     // main line function
     let line = d3Line().x(x).y(y).curve(curve);
 
     // initial render
     if (definedPath.empty()) {
-      definedPath = selection.append('path');
-      undefinedPath = selection.append('path');
+      definedPath = root.append('path');
+      undefinedPath = root.append('path');
     }
 
     definedPath.attr('clip-path', `url(#${getClipPathId(false)})`);
@@ -472,27 +481,27 @@ export default function () {
 
 
     // apply user-provided attrs and styles
-    Object.keys(lineAttrs).forEach(key => {
-      definedPath.attr(key, lineAttrs[key]);
-      undefinedPath.attr(key, lineAttrs[key]);
+    Object.keys(evaluatedAttrs.line).forEach(key => {
+      definedPath.attr(key, evaluatedAttrs.line[key]);
+      undefinedPath.attr(key, evaluatedAttrs.line[key]);
     });
-    Object.keys(lineStyles).forEach(key => {
-      definedPath.style(key, lineStyles[key]);
-      undefinedPath.style(key, lineStyles[key]);
+    Object.keys(evaluatedStyles.line).forEach(key => {
+      definedPath.style(key, evaluatedStyles.line[key]);
+      undefinedPath.style(key, evaluatedStyles.line[key]);
     });
     definedPath.classed('d3-line-chunked-defined', true);
 
     // overwrite with gap styles and attributes
-    Object.keys(gapAttrs).forEach(key => {
-      undefinedPath.attr(key, gapAttrs[key]);
+    Object.keys(evaluatedAttrs.gap).forEach(key => {
+      undefinedPath.attr(key, evaluatedAttrs.gap[key]);
     });
-    Object.keys(gapStyles).forEach(key => {
-      undefinedPath.style(key, gapStyles[key]);
+    Object.keys(evaluatedStyles.gap).forEach(key => {
+      undefinedPath.style(key, evaluatedStyles.gap[key]);
     });
     undefinedPath.classed('d3-line-chunked-undefined', true);
 
     // handle transition
-    if (context !== selection) {
+    if (transition) {
       definedPath = definedPath.transition(context);
       undefinedPath = undefinedPath.transition(context);
     }
@@ -515,36 +524,93 @@ export default function () {
     }
   }
 
+  /**
+   * Helper function to process any attrs or styles passed in as functions
+   * using the provided `d` and `i`
+   *
+   * @param {Object} lineInput lineAttrs or lineStyles
+   * @param {Object} gapInput gapAttrs or gapStyles
+   * @param {Object} pointInput pointAttrs or pointStyles
+   * @param {Object|Array} d the input data
+   * @param {Number} i the index for this dataset
+   * @return {Object} { line, gap, point }
+   */
+  function evaluate(lineInput, gapInput, pointInput, d, i) {
+    function evalInput(input) {
+      return Object.keys(input).reduce((output, key) => {
+        let val = input[key];
+
+        if (typeof val === 'function') {
+          val = val(d, i);
+        }
+
+        output[key] = val;
+        return output;
+      }, {});
+    }
+
+    return {
+      line: evalInput(lineInput),
+      gap: evalInput(gapInput),
+      point: evalInput(pointInput),
+    };
+  }
+
   // the main function that is returned
   function lineChunked(context) {
+    if (!context) {
+      return;
+    }
     const selection = context.selection ? context.selection() : context; // handle transition
 
-    const lineData = selection.datum();
-    const segments = computeSegments(lineData);
-    const points = segments.filter(segment => segment.length === 1)
-      .map(segment => ({
-        // use random ID so they are treated as entering/exiting each time
-        id: Math.random(),
-        data: segment[0],
-      }));
+    if (!selection || selection.empty()) {
+      return;
+    }
 
-    // filter to only defined data to plot the lines
-    const filteredLineData = lineData.filter(defined);
+    let transition = false;
+    if (selection !== context) {
+      transition = true;
+    }
 
-    // determine the extent of the y values
-    const yExtent = extent(filteredLineData.map(d => y(d)));
+    selection.each(function each(data, lineIndex) {
+      const root = select(this);
 
-    // determine the extent of the x values to handle stroke-width adjustments on
-    // clipping rects. Do not use extendEnds here since it can clip the line ending
-    // in an unnatural way, it's better to just show the end.
-    const xExtent = extent(filteredLineData.map(d => x(d)));
+      // use the accessor if provided (e.g. if the data is something like
+      // `{ results: [[x,y], [[x,y], ...]}`)
+      const lineData = accessData(data);
 
-    const initialRender = selection.select('.d3-line-chunked-defined').empty();
-    renderCircles(initialRender, context, selection, points);
-    renderPaths(initialRender, context, selection, filteredLineData, segments,
-      xExtent, yExtent);
-    renderClipRects(initialRender, context, selection, filteredLineData, segments,
-      xExtent, yExtent);
+      const segments = computeSegments(lineData);
+      const points = segments.filter(segment => segment.length === 1)
+        .map(segment => ({
+          // use random ID so they are treated as entering/exiting each time
+          id: Math.random(),
+          data: segment[0],
+        }));
+
+      // filter to only defined data to plot the lines
+      const filteredLineData = lineData.filter(defined);
+
+      // determine the extent of the y values
+      const yExtent = extent(filteredLineData.map(d => y(d)));
+
+      // determine the extent of the x values to handle stroke-width adjustments on
+      // clipping rects. Do not use extendEnds here since it can clip the line ending
+      // in an unnatural way, it's better to just show the end.
+      const xExtent = extent(filteredLineData.map(d => x(d)));
+
+      // evaluate attrs and styles for the given dataset
+      const evaluatedAttrs = evaluate(lineAttrs, gapAttrs, pointAttrs, data, lineIndex);
+      const evaluatedStyles = evaluate(lineStyles, gapStyles, pointStyles, data, lineIndex);
+
+      const initialRender = root.select('.d3-line-chunked-defined').empty();
+       // pass in the raw data and index for computing attrs and styles if they are functinos
+      renderCircles(initialRender, transition, context, root, points,
+        evaluatedAttrs, evaluatedStyles);
+      renderPaths(initialRender, transition, context, root, filteredLineData, segments,
+        xExtent, yExtent, evaluatedAttrs, evaluatedStyles);
+      renderClipRects(initialRender, transition, context, root, filteredLineData, segments,
+        xExtent, yExtent, evaluatedAttrs, evaluatedStyles);
+    });
   }
 
   // ------------------------------------------------
@@ -662,6 +728,15 @@ export default function () {
     set: (newValue) => { extendEnds = newValue; },
     setType: 'object', // should be an array
   });
+
+  // define `accessData([accessData])`
+  lineChunked.accessData = getterSetter({
+    get: () => accessData,
+    set: (newValue) => { accessData = newValue; },
+    setType: 'function',
+    asConstant: (newValue) => d => d[newValue],
+  });
+
 
   // define `debug([debug])`
   lineChunked.debug = getterSetter({

@@ -201,6 +201,8 @@ function renderRefLines(newData, root) {
 }
 
 function updateChart(newData) {
+  console.log('Main line using data', newData);
+
   x.domain(d3.extent(newData, function (d) { return d.x; }));
   y.domain(d3.extent(newData, function (d) { return d.y; }));
 
