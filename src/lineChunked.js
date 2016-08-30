@@ -280,7 +280,7 @@ export default function () {
     // get stroke width to avoid having the clip rects clip the stroke
     // See https://github.com/pbeshai/d3-line-chunked/issues/2
     const strokeWidth = parseFloat(lineStyles['stroke-width']
-      || select('.d3-line-chunked-defined').style('stroke-width')
+      || selection.select('.d3-line-chunked-defined').style('stroke-width')
       || lineAttrs['stroke-width']);
     const strokeWidthClipAdjustment = strokeWidth;
     const clipRectY = yMin - strokeWidthClipAdjustment;
