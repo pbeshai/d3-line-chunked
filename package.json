@@ -1,13 +1,17 @@
 {
   "name": "d3-line-chunked",
   "version": "1.2.0",
-  "description": "Interpolates path `d` attribute smoothly when A and B have different number of points.",
+  "description": "A d3 plugin that renders a line with potential gaps in the data by styling the gaps differently from the defined areas. Single points are rendered as circles. Transitions are supported.",
   "author": "Peter Beshai <peter.beshai@gmail.com> (http://github.com/pbeshai)",
   "keywords": [
     "d3",
     "d3-module",
-    "d3-interpolate",
-    "d3-line-chunked"
+    "plugin"
+    "d3-line-chunked",
+    "line",
+    "time series",
+    "chart",
+    "svg",
   ],
   "license": "BSD-3-Clause",
   "main": "build/d3-line-chunked.js",
