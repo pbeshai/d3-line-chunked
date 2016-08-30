@@ -13,8 +13,8 @@ Demo: http://peterbeshai.com/vis/d3-line-chunked/
 
 ```js
 var lineChunked = d3.lineChunked()
-  .x(function (d) { return x(d.x); })
-  .y(function (d) { return y(d.y); })
+  .x(function (d) { return xScale(d.x); })
+  .y(function (d) { return yScale(d.y); })
   .curve(d3.curveLinear)
   .defined(function (d) { return d.y != null; })
   .lineStyles({
@@ -27,6 +27,39 @@ d3.select('svg')
     .transition()
     .duration(1000)
     .call(lineChunked);
+```
+
+### Example with multiple lines
+
+```js
+var lineChunked = d3.lineChunked()
+  .x(function (d) { return xScale(d.x); })
+  .y(function (d) { return yScale(d.y); })
+  .defined(function (d) { return d.y != null; })
+  .lineStyles({
+    stroke: (d, i) => colorScale(i),
+  });
+
+var data = [
+  [{ 'x': 0, 'y': 42 }, { 'x': 1, 'y': 76 }, { 'x': 2, 'y': 54 }],
+  [{ 'x': 0, 'y': 386 }, { 'x': 1 }, { 'x': 2, 'y': 38 }, { 'x': 3, 'y': 192 }],
+  [{ 'x': 0, 'y': 325 }, { 'x': 1, 'y': 132 }, { 'x': 2 }, { 'x': 3, 'y': 180 }]
+];
+
+// bind data
+var binding = d3.select('svg').selectAll('g').data(data);
+
+// append a `<g>` for each line
+var entering = binding.enter().append('g');
+
+// call lineChunked on enter + update
+binding.merge(entering)
+  .transition()
+  .duration(transitionDuration / 3)
+  .call(lineChunked);
+
+// remove `<g>` when exiting
+binding.exit().remove();
 ```
 
 ## Development
@@ -148,6 +181,13 @@ The default value is `true`.
 Get or set *extendEnds*, an array `[xMin, xMax]` specifying the minimum and maximum x pixel values
 (e.g., `xScale.range()`). If defined, the undefined line will extend to the values provided,
 otherwise it will end at the last defined points.
+
+
+<a href="#lineChunked_accessData" name="lineChunked_accessData">#</a> *lineChunked*.**accessData**([*accessData*])
+
+Get or set *accessData*, a function that specifies how to map from a dataset entry to the array of line data. This is only useful if your input data doesn't use the standard form of `[point1, point2, point3, ...]`. For example, if you pass in your data as `{ results: [point1, point2, point3, ...] }`, you would want to set accessData to `data => data.results`. For convenience, if your accessData function simply accesses a key of an object, you can pass it in directly: `accessData('results')` is equivalent to `accessData(data => data.results)`.
+
+The default value is the identity function `data => data`.
 
 
 <a href="#lineChunked_lineStyles" name="lineChunked_lineStyles">#</a> *lineChunked*.**lineStyles**([*lineStyles*])

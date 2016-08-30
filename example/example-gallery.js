@@ -198,6 +198,25 @@
       },
     },
     {
+      label: 'Typical with accessData',
+      render: function typicalExample(root) {
+        var g = root.append('svg')
+          .attr('width', exampleWidth)
+          .attr('height', exampleHeight)
+          .append('g');
+
+        var chunked = d3.lineChunked()
+          .x(function (d) { return x(d[0]); })
+          .y(function (d) { return y(d[1]); })
+          .defined(function (d) { return d[1] !== null; })
+          .accessData(data => data.results);
+
+        var data = { results: [[0, 1], [1, 2], [2, null], [3, null], [4, 1], [5, null], [6, 2], [7, 3], [8, null], [9, 1], [10, 1]] };
+
+        g.datum(data).call(chunked);
+      },
+    },
+    {
       label: 'Transition: transitionInitial=true',
       transition: true,
       render: function transitionInitialTrue(root) {
@@ -377,6 +396,65 @@
         setTimeout(function () {
           g.datum(dataEnd).transition().duration(transitionDuration).call(chunked);
         }, transitionDuration / 4);
+      },
+    },
+    {
+      label: 'Multiple lines',
+      transition: true,
+      render: function endSegmentOverlap(root) {
+        var g = root.append('svg')
+          .attr('width', exampleWidth)
+          .attr('height', exampleHeight)
+          .append('g');
+
+        var x = d3
+          .scaleLinear()
+          .domain([3, 19])
+          .range([10, exampleWidth - 10]);
+
+        var y = d3
+          .scaleLinear()
+          .domain([2, 250])
+          .range([exampleHeight - 10, 10]);
+
+        var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+        var chunked = d3.lineChunked()
+          .x(function (d) { return x(d.x); })
+          .y(function (d) { return y(d.y); })
+          .defined(function (d) { return d.y != null; })
+          .debug(transitionDebug)
+          .lineStyles({
+            stroke: (d, i) => color(i),
+          })
+          .transitionInitial(true);
+
+        var dataStart = [[{"x":0,"y":42,"v":93},{"x":1,"y":7,"v":216},{"x":2,"y":5,"v":174},{"x":3,"y":5,"v":105},{"x":4,"y":12,"v":235},{"x":5,"y":108,"v":137},{"x":6,"v":36},{"x":7,"y":146,"v":122},{"x":8,"y":115,"v":223},{"x":9,"v":192},{"x":10,"y":145,"v":114},{"x":11,"y":21,"v":130},{"x":12,"v":64},{"x":13,"v":158},{"x":14,"y":58,"v":226},{"x":15,"y":7,"v":215},{"x":16,"y":44,"v":141},{"x":17,"y":5,"v":126},{"x":18,"y":39,"v":144},{"x":19,"y":28,"v":134}],
+          [{"x":0,"y":38,"v":166},{"x":1,"y":11,"v":197},{"x":2,"y":38,"v":80},{"x":3,"y":19,"v":222},{"x":4,"v":140},{"x":5,"y":23,"v":100},{"x":6,"y":13,"v":161},{"x":7,"y":47,"v":152},{"x":8,"v":145},{"x":9,"v":143},{"x":10,"y":16,"v":51},{"x":11,"y":17,"v":180},{"x":12,"y":9,"v":148},{"x":13,"v":196},{"x":14,"y":24,"v":207},{"x":15,"y":2,"v":19},{"x":16,"y":4,"v":165},{"x":17,"v":77},{"x":18,"y":123,"v":108},{"x":19,"y":81,"v":234}],
+          [{"x":0,"y":32,"v":155},{"x":1,"y":13,"v":192},{"x":2,"y":7,"v":157},{"x":3,"y":100,"v":176},{"x":4,"v":106},{"x":5,"y":10,"v":209},{"x":6,"y":26,"v":19},{"x":7,"v":109},{"x":8,"y":7,"v":247},{"x":9,"y":11,"v":172},{"x":10,"y":236,"v":115},{"x":11,"y":1,"v":91},{"x":12,"y":3,"v":180},{"x":13,"y":19,"v":195},{"x":14,"v":46},{"x":15,"y":3,"v":211},{"x":16,"v":183},{"x":17,"v":148},{"x":18,"y":60,"v":181},{"x":19,"y":10,"v":119}]];
+
+        var dataEnd = [[{"x":0,"y":63,"v":276},{"x":1,"y":30,"v":230},{"x":2,"y":4,"v":139},{"x":3,"y":35,"v":93},{"x":4,"y":1,"v":265},{"x":5,"y":131,"v":206},{"x":6,"y":49,"v":65},{"x":7,"y":10,"v":183},{"x":8,"v":186},{"x":9,"y":36,"v":175},{"x":10,"y":31,"v":28},{"x":11,"y":2,"v":137},{"x":12,"y":15,"v":52},{"x":13,"y":8,"v":200},{"x":14,"y":8,"v":125},{"x":15,"y":79,"v":161},{"x":16,"y":55,"v":241},{"x":17,"y":1,"v":173},{"x":18,"y":6,"v":137},{"x":19,"y":27,"v":120}],
+          [{"x":0,"y":5,"v":153},{"x":1,"y":36,"v":244},{"x":2,"y":43,"v":57},{"x":3,"y":15,"v":102},{"x":4,"y":281,"v":228},{"x":5,"y":16,"v":174},{"x":6,"y":41,"v":32},{"x":7,"y":45,"v":144},{"x":8,"v":115},{"x":9,"y":27,"v":99},{"x":10,"y":115,"v":190},{"x":11,"v":113},{"x":12,"y":26,"v":154},{"x":13,"y":26,"v":131},{"x":14,"v":211},{"x":15,"v":192},{"x":16,"y":48,"v":103},{"x":17,"y":4,"v":126},{"x":18,"y":6,"v":141},{"x":19,"y":23,"v":187}]];
+
+
+        function updateChart(data) {
+          var binding = g.selectAll('g').data(data);
+          var entering = binding.enter().append('g');
+          binding.merge(entering)
+            .transition().duration(transitionDuration / 3)
+            .call(chunked);
+          binding.exit().remove();
+        }
+
+        updateChart(dataStart);
+
+        setTimeout(function () {
+          updateChart(dataEnd);
+          setTimeout(function () {
+            updateChart(dataStart);
+          }, transitionDuration / 2);
+        }, transitionDuration / 2);
+
       },
     },
   ];

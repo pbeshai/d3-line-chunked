@@ -52,6 +52,8 @@ tape('lineChunked() getter and setters work', function (t) {
   t.deepEqual(chunked.pointAttrs({ fill: 'red' }).pointAttrs(), { fill: 'red' }, 'pointAttrs sets object');
   t.equal(chunked.transitionInitial(false).transitionInitial(), false, 'transitionInitial sets boolean');
   t.deepEqual(chunked.extendEnds([5, 20]).extendEnds(), [5, 20], 'extendEnds sets array');
+  t.deepEqual(chunked.accessData(d => d.results).accessData()({ results: [5, 20] }), [5, 20], 'accessData sets function');
+  t.deepEqual(chunked.accessData('results').accessData()({ results: [5, 20] }), [5, 20], 'accessData sets string');
 
   t.end();
 });
