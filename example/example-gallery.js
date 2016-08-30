@@ -9,7 +9,7 @@
   var x = d3.scaleLinear().domain([0, 10]).range([10, exampleWidth - 10]);
   var y = d3.scaleLinear().domain([0, 4]).range([exampleHeight - 10, 10]);
 
-  var transitionDuration = 500;
+  var transitionDuration = 2500;
   var transitionDebug = false;
 
   var examples = [
@@ -33,7 +33,7 @@
     },
     {
       label: 'Typical with curve',
-      render: function typicalExample(root) {
+      render: function typicalExampleWithCurve(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -52,7 +52,7 @@
     },
     {
       label: 'Many points, all defined',
-      render: function typicalExample(root) {
+      render: function manyPointsAllDefined(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -70,7 +70,7 @@
     },
     {
       label: 'Undefined at ends',
-      render: function typicalExample(root) {
+      render: function undefinedAtEnds(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -89,7 +89,7 @@
     },
     {
       label: 'Undefined at ends + extendEnds',
-      render: function typicalExample(root) {
+      render: function undefinedAtEndsExtendEnds(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -108,7 +108,7 @@
     },
     {
       label: 'Lines along top and bottom edges',
-      render: function typicalExample(root) {
+      render: function topBottomEdges(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -127,7 +127,7 @@
     },
     {
       label: 'Data length 1',
-      render: function typicalExample(root) {
+      render: function dataLength1(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -145,7 +145,7 @@
     },
     {
       label: 'Empty Data',
-      render: function typicalExample(root) {
+      render: function emptyData(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -163,7 +163,7 @@
     },
     {
       label: 'One undefined point',
-      render: function typicalExample(root) {
+      render: function oneDefinedPoint(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -181,7 +181,7 @@
     },
     {
       label: 'Many points, all undefined',
-      render: function typicalExample(root) {
+      render: function manyPointsUndefined(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -200,7 +200,7 @@
     {
       label: 'Transition: transitionInitial=true',
       transition: true,
-      render: function typicalExample(root) {
+      render: function transitionInitialTrue(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -221,7 +221,7 @@
     {
       label: 'Transition: full to missing',
       transition: true,
-      render: function typicalExample(root) {
+      render: function fullToMissing(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -246,7 +246,7 @@
     {
       label: 'Transition: from point',
       transition: true,
-      render: function typicalExample(root) {
+      render: function fromPoint(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -271,7 +271,7 @@
     {
       label: 'Transition: from point + extendEnds',
       transition: true,
-      render: function typicalExample(root) {
+      render: function fromPointExtendEnds(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -297,7 +297,7 @@
     {
       label: 'Transition: gap to line',
       transition: true,
-      render: function typicalExample(root) {
+      render: function gapToLine(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -322,7 +322,7 @@
     {
       label: 'Transition: few -> many segments',
       transition: true,
-      render: function typicalExample(root) {
+      render: function fewToMany(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -347,7 +347,7 @@
     {
       label: 'Transition: end segment overlap',
       transition: true,
-      render: function typicalExample(root) {
+      render: function endSegmentOverlap(root) {
         var g = root.append('svg')
           .attr('width', exampleWidth)
           .attr('height', exampleHeight)
@@ -379,7 +379,6 @@
         }, transitionDuration / 4);
       },
     },
-
   ];
 
 
