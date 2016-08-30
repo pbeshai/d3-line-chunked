@@ -55,7 +55,6 @@ var entering = binding.enter().append('g');
 // call lineChunked on enter + update
 binding.merge(entering)
   .transition()
-  .duration(transitionDuration / 3)
   .call(lineChunked);
 
 // remove `<g>` when exiting
