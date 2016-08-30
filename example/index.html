@@ -38,11 +38,13 @@ function generateRandom(length) {
   var vRandomizer = d3.randomNormal(150, 50);
   var missingChance = 0.8;
 
-  return d3.range(length).map(i => ({
-    x: i,
-    y: Math.round(yRandomizer()),
-    v: Math.round(vRandomizer())
-  })).map(d => {
+  return d3.range(length).map(function (i) {
+    return {
+      x: i,
+      y: Math.round(yRandomizer()),
+      v: Math.round(vRandomizer())
+    }
+  }).map(function (d) {
     if (Math.random() > missingChance && d.x > 3 && d.x < length - 2) {
       d.y = undefined;
     }
@@ -59,12 +61,12 @@ function setupChart(data) {
 
   x = d3
       .scaleLinear()
-      .domain(d3.extent(data, d => d.x))
+      .domain(d3.extent(data, function (d) { return d.x; }))
       .range([0, width]);
 
   y = d3
       .scaleLinear()
-      .domain(d3.extent(data, d => d.y))
+      .domain(d3.extent(data, function (d) { return d.y; }))
       .range([0.5 * groupHeight, 0]);
 
   svg = d3.select('.chart-container').append('svg')
@@ -75,14 +77,14 @@ function setupChart(data) {
 
   line = d3.line()
       .curve(d3.curveLinear)
-      .x((d) => x(d.x))
-      .y((d) => y(d.y));
+      .x(function (d) { return x(d.x); })
+      .y(function (d) { return y(d.y); });
 
   lineWithDefined = d3.line()
       .curve(d3.curveLinear)
-      .x((d) => x(d.x))
-      .y((d) => y(d.y))
-      .defined(d => d.y != null);
+      .x(function (d) { return x(d.x); })
+      .y(function (d) { return y(d.y); })
+      .defined(function (d) { return d.y != null; });
 
   svg.append('g')
       .attr('class', 'ref-lines');
@@ -110,7 +112,7 @@ function setupChart(data) {
 
   d3.select('.chart-container').append('button')
     .text('New Data')
-    .on('click', () => updateChart(generateRandom(20)))
+    .on('click', function () { updateChart(generateRandom(20)); })
 
   updateChart(data);
 }
@@ -118,10 +120,10 @@ function setupChart(data) {
 
 function renderChunkedLine(lineData, root) {
   var lineChunked = d3.lineChunked()
-    .x(d => x(d.x))
-    .y(d => y(d.y))
+    .x(function (d) { return x(d.x); })
+    .y(function (d) { return y(d.y); })
     .curve(d3.curveLinear)
-    .defined(d => d.y != null)
+    .defined(function (d) { return d.y != null; })
     .lineStyles({
       stroke: '#0bb',
     });
@@ -135,7 +137,7 @@ function renderChunkedLine(lineData, root) {
 
 function renderBasicLine(newData, root, line, showPoints) {
   // render basic line
-  let basicLine = root.select('path');
+  var basicLine = root.select('path');
 
   if (basicLine.empty()) {
     basicLine = root.append('path')
@@ -152,37 +154,37 @@ function renderBasicLine(newData, root, line, showPoints) {
       .attr('d', line(newData));
 
   if (showPoints) {
-    const filteredData = newData.filter(d => d.y != null);
+    var filteredData = newData.filter(function (d) { return d.y != null; });
 
-    const circleBinding = root.selectAll('circle').data(filteredData);
+    var circleBinding = root.selectAll('circle').data(filteredData);
 
-    const circleEntering = circleBinding.enter()
+    var circleEntering = circleBinding.enter()
       .append('circle')
-      .attr('cx', d => x(d.x))
-      .attr('cy', d => y(d.y));
+      .attr('cx', function (d) { return x(d.x); })
+      .attr('cy', function (d) { return y(d.y); });
 
     circleBinding.merge(circleEntering)
       .style('fill', lineColor)
       .transition()
       .duration(transitionDuration)
       .attr('r', 3.5)
-      .attr('cx', d => x(d.x))
-      .attr('cy', d => y(d.y));
+      .attr('cx', function (d) { return x(d.x); })
+      .attr('cy', function (d) { return y(d.y); });
 
     circleBinding.exit().remove();
   }
 }
 
 function renderRefLines(newData, root) {
-  const filteredData = newData.filter(d => d.y != null);
+  var filteredData = newData.filter(function (d) { return d.y != null; });
 
-  const binding = root.selectAll('line').data(filteredData);
+  var binding = root.selectAll('line').data(filteredData);
 
-  const entering = binding.enter()
+  var entering = binding.enter()
     .append('line')
       .style('stroke', 'transparent')
-      .attr('x1', d => x(d.x))
-      .attr('x2', d => x(d.x));
+      .attr('x1', function (d) { return x(d.x); })
+      .attr('x2', function (d) { return x(d.x); });
 
 
 
@@ -190,29 +192,29 @@ function renderRefLines(newData, root) {
     .transition()
     .duration(transitionDuration)
     .style('stroke', '#f4f4f4')
-    .attr('x1', d => x(d.x))
-    .attr('x2', d => x(d.x))
-    .attr('y1', d => 0)
-    .attr('y2', d => height)
+    .attr('x1', function (d) { return x(d.x); })
+    .attr('x2', function (d) { return x(d.x); })
+    .attr('y1', 0)
+    .attr('y2', height)
 
   binding.exit().remove();
 }
 
 function updateChart(newData) {
-  x.domain(d3.extent(newData, d => d.x));
-  y.domain(d3.extent(newData, d => d.y));
+  x.domain(d3.extent(newData, function (d) { return d.x; }));
+  y.domain(d3.extent(newData, function (d) { return d.y; }));
 
-  const gRefLines = svg.select('.ref-lines');
+  var gRefLines = svg.select('.ref-lines');
   renderRefLines(newData, gRefLines);
 
-  const filteredData = newData.filter(d => d.y != null);
+  var filteredData = newData.filter(function (d) { return d.y != null; });
 
-  const gBasicLine = svg.select('.basic-line');
+  var gBasicLine = svg.select('.basic-line');
   renderBasicLine(filteredData, gBasicLine, line, true);
-  const gBasicLineDefined = svg.select('.basic-line-defined');
+  var gBasicLineDefined = svg.select('.basic-line-defined');
   renderBasicLine(newData, gBasicLineDefined, lineWithDefined);
 
-  const gChunkedLine = svg.select('.chunked-line');
+  var gChunkedLine = svg.select('.chunked-line');
   renderChunkedLine(newData, gChunkedLine);
 }
 

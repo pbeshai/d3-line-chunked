@@ -366,7 +366,7 @@
         var chunked = d3.lineChunked()
           .x(function (d) { return x(d.x); })
           .y(function (d) { return y(d.y); })
-          .defined(d => d.y != null)
+          .defined(function (d) { return d.y != null; })
           .debug(transitionDebug)
           .transitionInitial(false);
 
