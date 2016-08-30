@@ -429,11 +429,7 @@ export default function () {
     let undefinedPath = selection.select('.d3-line-chunked-undefined');
 
     // main line function
-    const line = d3Line().x(x).y(y).curve(curve);
-
-    // can be different if the user decides to extend ends since we need to recreate the data
-    // in a different format.
-    let undefinedLine = line;
+    let line = d3Line().x(x).y(y).curve(curve);
 
     // initial render
     if (definedPath.empty()) {
@@ -443,41 +439,35 @@ export default function () {
 
     definedPath.attr('clip-path', `url(#${getClipPathId(false)})`);
 
-    // update attached data
-    let undefinedData = lineData;
-
     // if the user specifies to extend ends for the undefined line, add points to the line for them.
     if (extendEnds && lineData.length) {
       // we have to process the data here since we don't know how to format an input object
       // we use the [x, y] format of a data point
       const processedLineData = lineData.map(d => [x(d), y(d)]);
-      undefinedData = [
+      lineData = [
         [extendEnds[0], processedLineData[0][1]],
         ...processedLineData,
         [extendEnds[1], processedLineData[processedLineData.length - 1][1]],
       ];
 
       // this line function works on the processed data (default .x and .y read the [x,y] format)
-      undefinedLine = d3Line().curve(curve);
+      line = d3Line().curve(curve);
     }
 
     // handle animations for initial render
     if (initialRender) {
       // have the line load in with a flat y value
       let initialLine = line;
-      let initialUndefinedLine = line;
       if (transitionInitial) {
         initialLine = d3Line().x(x).y(yMax).curve(curve);
 
         // if the user extends ends, we should use the line that works on that data
         if (extendEnds) {
-          initialUndefinedLine = d3Line().y(yMax).curve(curve);
-        } else {
-          initialUndefinedLine = initialLine;
+          initialLine = d3Line().y(yMax).curve(curve);
         }
       }
       definedPath.attr('d', () => initialLine(lineData));
-      undefinedPath.attr('d', () => initialUndefinedLine(undefinedData));
+      undefinedPath.attr('d', () => initialLine(lineData));
     }
 
 
@@ -516,12 +506,12 @@ export default function () {
       });
       undefinedPath.attrTween('d', function dTween() {
         const previous = select(this).attr('d');
-        const current = undefinedLine(undefinedData);
+        const current = line(lineData);
         return interpolatePath(previous, current);
       });
     } else {
       definedPath.attr('d', () => line(lineData));
-      undefinedPath.attr('d', () => undefinedLine(undefinedData));
+      undefinedPath.attr('d', () => line(lineData));
     }
   }
 
