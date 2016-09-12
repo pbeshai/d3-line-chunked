@@ -1,6 +1,6 @@
 # Change Log
 
-## 1.1.0
+## 1.3.0
 
 - Increased gap line default opacity from 0.2 to 0.35 to make it more visible for lower contrast screens (#9)
 - Getter/setters now check for arguments.length before deciding to get or set (#10)
