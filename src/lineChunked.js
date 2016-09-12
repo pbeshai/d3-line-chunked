@@ -618,14 +618,16 @@ export default function () {
   // ------------------------------------------------
   function getterSetter({ get, set, setType, asConstant }) {
     return function getSet(newValue) {
-      // main setter if setType matches newValue type
-      if ((!setType && newValue != null) || (setType && typeof newValue === setType)) {
-        set(newValue);
-        return lineChunked;
+      if (arguments.length) {
+        // main setter if setType matches newValue type
+        if ((!setType && newValue != null) || (setType && typeof newValue === setType)) {
+          set(newValue);
 
-      // setter to constant function if provided
-      } else if (asConstant && newValue != null) {
-        set(asConstant(newValue));
+        // setter to constant function if provided
+        } else if (asConstant && newValue != null) {
+          set(asConstant(newValue));
+        }
+
         return lineChunked;
       }
 
