@@ -182,13 +182,16 @@ export default function () {
       evaluatedStyles) {
     let circles = root.selectAll('circle').data(points, d => d.id);
 
+    // read in properties about the transition if we have one
+    const transitionDuration = transition ? context.duration() : 0;
+    const transitionDelay = transition ? context.delay() : 0;
+
     // EXIT
     if (transition) {
-      const duration = context.duration();
-
       circles.exit()
         .transition()
-        .duration(duration * 0.05)
+        .delay(transitionDelay)
+        .duration(transitionDuration * 0.05)
         .attr('r', 1e-6)
         .remove();
     } else {
@@ -227,12 +230,12 @@ export default function () {
 
     // handle with transition
     if ((!initialRender || (initialRender && transitionInitial)) && transition) {
-      const duration = context.duration();
-      const enterDuration = duration * 0.15;
+      const enterDuration = transitionDuration * 0.15;
+
       // delay sizing up the radius until after the line transition
       circlesEnter
         .transition(context)
-        .delay(duration - enterDuration)
+        .delay(transitionDelay + (transitionDuration - enterDuration))
         .duration(enterDuration)
         .attr('r', combinedAttrs.r);
     } else {

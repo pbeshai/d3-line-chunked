@@ -500,6 +500,32 @@
         }, transitionDuration / 4);
       },
     },
+    {
+      label: 'Transition: transition has delay',
+      transition: true,
+      render: function fromPoint(root) {
+        var g = root.append('svg')
+          .attr('width', exampleWidth)
+          .attr('height', exampleHeight)
+          .append('g');
+
+        var chunked = d3.lineChunked()
+          .x(function (d) { return x(d[0]); })
+          .y(function (d) { return y(d[1]); })
+          .defined(function (d) { return d[1] !== null; })
+          .isNext(function (prev, curr) { return curr[0] === prev[0] + 1; })
+          .debug(transitionDebug)
+          .transitionInitial(false);
+
+        var dataStart = [[0, 1], [2, 2], [4, 1], [5, null], [6, 2], [7, null], [8, 2], [9, 0]];
+        var dataEnd = [[0, 1], [1, 2], [3, 0], [4, 1], [6, 3], [7, 2], [9, 1], [10, 1]];
+
+        g.datum(dataStart).call(chunked);
+        setTimeout(function () {
+          g.datum(dataEnd).transition().delay(2000).duration(transitionDuration).call(chunked);
+        }, transitionDuration / 4);
+      },
+    },
 
   ];
 
