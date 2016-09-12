@@ -583,7 +583,7 @@ export default function () {
       const points = segments.filter(segment => segment.length === 1)
         .map(segment => ({
           // use random ID so they are treated as entering/exiting each time
-          id: Math.random(),
+          id: x(segment[0]),
           data: segment[0],
         }));
 
