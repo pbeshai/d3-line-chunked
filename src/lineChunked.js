@@ -20,7 +20,7 @@ export default function () {
   };
   const defaultGapAttrs = {
     'stroke-dasharray': '2 2',
-    'stroke-opacity': 0.2,
+    'stroke-opacity': 0.35,
   };
   const defaultPointAttrs = {
     // read fill and r at render time in case the lineAttrs changed
