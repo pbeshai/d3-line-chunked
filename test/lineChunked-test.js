@@ -101,6 +101,25 @@ tape('lineChunked() with one data point', function (t) {
   t.end();
 });
 
+tape('lineChunked() with null transition to null', function (t) {
+  const document = jsdom.jsdom();
+  const g = select(document.body).append('svg').append('g');
+
+  const chunked = lineChunked().defined(d => d[1] != null);
+  const data = [[0, null]];
+
+  g.datum(data).call(chunked).transition().call(chunked);
+  console.log(g.node().innerHTML);
+
+  t.equal(lengthOfPath(g.select(definedLineClass)), 0);
+  t.equal(lengthOfPath(g.select(undefinedLineClass)), 0);
+  t.equal(g.select(definedPointClass).size(), 0);
+  t.equal(g.selectAll('clipPath').selectAll('rect').size(), 0);
+
+  t.end();
+});
+
+
 tape('lineChunked() with many data points', function (t) {
   const document = jsdom.jsdom();
   const g = select(document.body).append('svg').append('g');

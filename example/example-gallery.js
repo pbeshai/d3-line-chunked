@@ -457,6 +457,24 @@
 
       },
     },
+    {
+      label: 'Transition: null to null',
+      render: function typicalExample(root) {
+        var g = root.append('svg')
+          .attr('width', exampleWidth)
+          .attr('height', exampleHeight)
+          .append('g');
+
+        var chunked = d3.lineChunked()
+          .x(function (d) { return x(d[0]); })
+          .y(function (d) { return y(d[1]); })
+          .defined(function (d) { return d[1] !== null; });
+
+        var data = [[0, null]];
+
+        g.datum(data).call(chunked).transition().call(chunked);
+      },
+    },
   ];
 
 
