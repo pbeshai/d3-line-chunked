@@ -5,6 +5,8 @@
 A d3 plugin that renders a line with potential gaps in the data by styling the gaps differently
 from the defined areas. Single points are rendered as circles. Transitions are supported.
 
+Blog: [Showing Missing Data in Line Charts](https://bocoup.com/weblog/showing-missing-data-in-line-charts)
+
 Demo: http://peterbeshai.com/vis/d3-line-chunked/
 
 ![d3-line-chunked-demo](https://cloud.githubusercontent.com/assets/793847/18075172/806683f4-6e40-11e6-96bc-e0250adf0529.gif)
