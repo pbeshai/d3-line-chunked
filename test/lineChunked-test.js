@@ -167,6 +167,62 @@ tape('lineChunked() with many data points and some undefined', function (t) {
 });
 
 
+tape('lineChunked() sets attrs and styles', function (t) {
+  const document = jsdom.jsdom();
+  const g = select(document.body).append('svg').append('g');
+
+  const chunked = lineChunked()
+    .lineAttrs({
+      'stroke-width': 4,
+      stroke: (d, i) => i === 0 ? 'blue' : 'red',
+    })
+    .lineStyles({
+      fill: 'purple',
+      stroke: (d, i) => i === 0 ? 'orange' : 'green',
+    })
+    .gapAttrs({
+      'stroke-width': 2,
+      stroke: (d, i) => i === 0 ? 'teal' : 'cyan',
+    })
+    .gapStyles({
+      stroke: (d, i) => i === 0 ? 'magenta' : 'brown',
+    })
+    .pointAttrs({
+      'r': 20,
+    })
+    .pointStyles({
+      fill: 'maroon',
+      stroke: (d, i) => i === 0 ? 'indigo' : 'violet',
+    })
+    .defined(d => d[1] !== null);
+
+  const data = [[0, 1], [1, 2], [2, null], [3, null], [4, 1], [5, null], [6, 2], [7, 3]];
+
+  g.datum(data).call(chunked);
+  // console.log(g.node().innerHTML);
+
+  const line = g.select(definedLineClass);
+  const gap = g.select(undefinedLineClass);
+  const point = g.select('circle');
+
+  t.equal(line.attr('stroke-width'), '4');
+  t.equal(line.attr('stroke'), 'blue');
+  t.equal(line.style('fill'), 'purple');
+  t.equal(line.style('stroke'), 'orange');
+
+  t.equal(gap.attr('stroke-width'), '2');
+  t.equal(gap.attr('stroke'), 'teal');
+  t.equal(gap.style('fill'), 'purple');
+  t.equal(gap.style('stroke'), 'magenta');
+
+  t.equal(point.attr('r'), '20');
+  t.equal(point.attr('fill'), 'blue');
+  t.equal(point.style('fill'), 'maroon');
+  t.equal(point.style('stroke'), 'indigo');
+
+  t.end();
+});
+
 
 tape('lineChunked() stroke width clipping adjustments', function (t) {
   const document = jsdom.jsdom();
