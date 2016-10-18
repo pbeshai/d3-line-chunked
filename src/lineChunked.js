@@ -433,23 +433,84 @@ export default function () {
   }
 
   /**
-   * Render the paths for segments and gaps
+   * Helper function that applies attrs and styles to the specified path based on
+   * the types provided.
+   *
+   * @param {Object} path The d3 selected path
+   * @param {Object} evaluatedAttrs The evaluated attributes obj (output from evaluate())
+   * @param {Object} evaluatedStyles The evaluated styles obj (output from evaluate())
+   * @param {String[]} types The types of attrs/styles to apply to the path. Should
+   *   correspond to keys within evaluatedAttrs/Styles (e.g., ['line', 'gap']).
+   * @return {void}
    */
-  function renderPaths(initialRender, transition, context, root, lineData,
-      segments, [xMin, xMax], [yMin, yMax], evaluatedAttrs, evaluatedStyles) { // eslint-disable-line
-    let definedPath = root.select('.d3-line-chunked-defined');
-    let undefinedPath = root.select('.d3-line-chunked-undefined');
+  function applyAttrsAndStyles(path, evaluatedAttrs, evaluatedStyles, types) {
+    types.forEach((type) => {
+      // apply user-provided attrs
+      Object.keys(evaluatedAttrs[type]).forEach((attr) => {
+        path.attr(attr, evaluatedAttrs[type][attr]);
+      });
 
-    // main line function
-    let line = d3Line().x(x).y(y).curve(curve);
+      // apply user-provided styles
+      Object.keys(evaluatedStyles[type]).forEach((style) => {
+        path.style(style, evaluatedStyles[type][style]);
+      });
+    });
+  }
+
+  /**
+   * Helper function to draw the actual path
+   */
+  function renderPath(initialRender, transition, context, root, lineData,
+      segments, evaluatedAttrs, evaluatedStyles, line, initialLine, className,
+      applyTypes, clipPathId) {
+    let path = root.select(`.${className}`);
 
     // initial render
-    if (definedPath.empty()) {
-      definedPath = root.append('path');
-      undefinedPath = root.append('path');
+    if (path.empty()) {
+      path = root.append('path');
     }
 
-    definedPath.attr('clip-path', `url(#${getClipPathId(false)})`);
+    if (clipPathId) {
+      path.attr('clip-path', `url(#${getClipPathId(false)})`);
+    }
+
+    // handle animations for initial render
+    if (initialRender) {
+      path.attr('d', initialLine(lineData));
+    }
+
+    // apply user defined styles and attributes
+    applyAttrsAndStyles(path, evaluatedAttrs, evaluatedStyles, applyTypes);
+
+    path.classed(className, true);
+
+    // handle transition
+    if (transition) {
+      path = path.transition(context);
+    }
+
+    if (path.attrTween) {
+      // use attrTween is available (in transition)
+      path.attrTween('d', function dTween() {
+        const previous = select(this).attr('d');
+        const current = line(lineData);
+        return interpolatePath(previous, current);
+      });
+    } else {
+      path.attr('d', () => line(lineData));
+    }
+  }
+
+  /**
+   * Helper to get the line functions to use to draw the lines. Possibly
+   * updates the line data to be in [x, y] format if extendEnds is true.
+   *
+   * @return {Object} { line, initialLine, lineData }
+   */
+  function getLineFunctions(lineData, initialRender, [yMin, yMax]) { // eslint-disable-line no-unused-vars
+    // main line function
+    let line = d3Line().x(x).y(y).curve(curve);
+    let initialLine;
 
     // if the user specifies to extend ends for the undefined line, add points to the line for them.
     if (extendEnds && lineData.length) {
@@ -469,7 +530,7 @@ export default function () {
     // handle animations for initial render
     if (initialRender) {
       // have the line load in with a flat y value
-      let initialLine = line;
+      initialLine = line;
       if (transitionInitial) {
         initialLine = d3Line().x(x).y(yMax).curve(curve);
 
@@ -478,53 +539,34 @@ export default function () {
           initialLine = d3Line().y(yMax).curve(curve);
         }
       }
-      definedPath.attr('d', () => initialLine(lineData));
-      undefinedPath.attr('d', () => initialLine(lineData));
     }
 
+    return {
+      line,
+      initialLine: initialLine || line,
+      lineData,
+    };
+  }
 
-    // apply user-provided attrs and styles
-    Object.keys(evaluatedAttrs.line).forEach(key => {
-      definedPath.attr(key, evaluatedAttrs.line[key]);
-      undefinedPath.attr(key, evaluatedAttrs.line[key]);
-    });
-    Object.keys(evaluatedStyles.line).forEach(key => {
-      definedPath.style(key, evaluatedStyles.line[key]);
-      undefinedPath.style(key, evaluatedStyles.line[key]);
-    });
-    definedPath.classed('d3-line-chunked-defined', true);
+  /**
+   * Render the paths for segments and gaps
+   */
+  function renderPaths(initialRender, transition, context, root, lineData,
+      segments, xDomain, yDomain, evaluatedAttrs, evaluatedStyles) {
+    // update line functions and data depending on animation and render circumstances
+    const lineResults = getLineFunctions(lineData, initialRender, yDomain);
+    const { line, initialLine } = lineResults;
 
-    // overwrite with gap styles and attributes
-    Object.keys(evaluatedAttrs.gap).forEach(key => {
-      undefinedPath.attr(key, evaluatedAttrs.gap[key]);
-    });
-    Object.keys(evaluatedStyles.gap).forEach(key => {
-      undefinedPath.style(key, evaluatedStyles.gap[key]);
-    });
-    undefinedPath.classed('d3-line-chunked-undefined', true);
+    // possibly updated if extendEnds is true since we normalize to [x, y] format
+    lineData = lineResults.lineData;
 
-    // handle transition
-    if (transition) {
-      definedPath = definedPath.transition(context);
-      undefinedPath = undefinedPath.transition(context);
-    }
+    renderPath(initialRender, transition, context, root, lineData,
+      segments, evaluatedAttrs, evaluatedStyles, line, initialLine,
+      'd3-line-chunked-defined', ['line'], getClipPathId(false));
 
-    if (definedPath.attrTween) {
-      // use attrTween is available (in transition)
-      definedPath.attrTween('d', function dTween() {
-        const previous = select(this).attr('d');
-        const current = line(lineData);
-        return interpolatePath(previous, current);
-      });
-      undefinedPath.attrTween('d', function dTween() {
-        const previous = select(this).attr('d');
-        const current = line(lineData);
-        return interpolatePath(previous, current);
-      });
-    } else {
-      definedPath.attr('d', () => line(lineData));
-      undefinedPath.attr('d', () => line(lineData));
-    }
+    renderPath(initialRender, transition, context, root, lineData,
+      segments, evaluatedAttrs, evaluatedStyles, line, initialLine,
+      'd3-line-chunked-undefined', ['line', 'gap']);
   }
 
   /**
