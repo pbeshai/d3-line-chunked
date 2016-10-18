@@ -43,6 +43,9 @@ tape('lineChunked() getter and setters work', function (t) {
   t.equal(chunked.defined(d => d > 4).defined()(5), true, 'defined sets function');
   t.equal(chunked.isNext(false).isNext()(3), false, 'isNext makes constant function');
   t.equal(chunked.isNext(d => d > 4).isNext()(3), false, 'isNext sets function');
+  t.equal(chunked.chunk('my-chunk').chunk()(9), 'my-chunk', 'chunk makes constant function');
+  t.equal(chunked.chunk(d => d > 4 ? 'foo' : 'bar').chunk()(5), 'foo', 'chunk sets function');
+  t.deepEqual(chunked.chunkDefinitions({ chunk1: { styles: { color: 'red' } } }).chunkDefinitions(), { chunk1: { styles: { color: 'red' } } }, 'chunkDefinitions sets object');
   t.equal(chunked.curve(d => 5).curve()(3), 5, 'curve sets function');
   t.deepEqual(chunked.lineStyles({ fill: 'red' }).lineStyles(), { fill: 'red' }, 'lineStyles sets object');
   t.deepEqual(chunked.lineAttrs({ fill: 'red' }).lineAttrs(), { fill: 'red' }, 'lineAttrs sets object');

@@ -63,6 +63,31 @@ export default function () {
   let isNext = () => true;
 
   /**
+   * Function to determine which chunk this data is within.
+   *
+   * @param {Any} d data point
+   * @param {Any[]} data the full dataset
+   * @return {String} The id of the chunk. Defaults to "line"
+   */
+  let chunk = () => 'line';
+
+  /**
+   * Object specifying how to set style and attributes for each chunk.
+   * Format is an object:
+   *
+   * {
+   *   chunkName1: {
+   *     styles: {},
+   *     attrs: {},
+   *     pointStyles: {},
+   *     pointAttrs: {},
+   *   },
+   *   ...
+   * }
+   */
+  let chunkDefinitions = {};
+
+  /**
    * Passed through to d3.line().curve. Default value: d3.curveLinear.
    */
   let curve = curveLinear;
@@ -711,6 +736,21 @@ export default function () {
     set: (newValue) => { isNext = newValue; },
     setType: 'function',
     asConstant: (newValue) => () => !!newValue,
+  });
+
+  // define `chunk([chunk])`
+  lineChunked.chunk = getterSetter({
+    get: () => chunk,
+    set: (newValue) => { chunk = newValue; },
+    setType: 'function',
+    asConstant: (newValue) => () => newValue,
+  });
+
+  // define `chunkDefinitions([chunkDefinitions])`
+  lineChunked.chunkDefinitions = getterSetter({
+    get: () => chunkDefinitions,
+    set: (newValue) => { chunkDefinitions = newValue; },
+    setType: 'object',
   });
 
   // define `curve([curve])`
