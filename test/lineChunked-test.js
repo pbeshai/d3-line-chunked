@@ -275,7 +275,6 @@ tape('lineChunked() sets attrs and styles via chunkDefinitions', function (t) {
           'r': 20,
         },
         pointStyles: {
-          fill: 'maroon',
           stroke: (d, i) => i === 0 ? 'indigo' : 'violet',
         }
       },
@@ -324,7 +323,7 @@ tape('lineChunked() sets attrs and styles via chunkDefinitions', function (t) {
 
   t.equal(point.attr('r'), '20');
   t.equal(point.attr('fill'), 'blue');
-  t.equal(point.style('fill'), 'maroon');
+  t.equal(point.style('fill'), 'orange');
   t.equal(point.style('stroke'), 'indigo');
 
   t.end();
