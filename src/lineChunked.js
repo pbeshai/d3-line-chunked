@@ -226,6 +226,17 @@ export default function () {
     });
   }
 
+  /**
+   * Helper to get the chunk names that are defined
+   */
+  function getChunkNames() {
+    return [
+      lineChunkName,
+      gapChunkName,
+      ...Object.keys(chunkDefinitions).filter(name => name !== lineChunkName && name !== gapChunkName),
+    ];
+  }
+
 
   /**
    * Render the points for when segments have length 1.
@@ -288,19 +299,11 @@ export default function () {
       .attr('cy', d => y(d.data));
   }
 
-  function getClipPathId(increment) {
-    const id = `d3-line-chunked-clip-path-${counter}`;
-    if (increment) {
-      counter += 1;
-    }
-
-    return id;
-  }
-
-  function renderClipRects(initialRender, transition, context, root, lineData,
-      segments, [xMin, xMax], [yMin, yMax], evaluatedDefinitions) {
-    const clipPathId = getClipPathId(true);
-    let clipPath = root.select('clipPath');
+  function renderClipRects(initialRender, transition, context, root, segments,
+      [xMin, xMax], [yMin, yMax], evaluatedDefinition, path, clipPathId) {
+    // TODO: issue with assigning IDs to clipPath elements. need to update how we select/create them
+    // need reference to path element to set stroke-width property
+    const clipPath = root.select(`#${clipPathId}`);
     let gDebug = root.select('.d3-line-chunked-debug');
 
     // set up debug group
@@ -310,27 +313,16 @@ export default function () {
       gDebug.remove();
     }
 
-    // initial render
-    if (clipPath.empty()) {
-      clipPath = root.append('defs')
-        .append('clipPath')
-        .attr('id', clipPathId);
-    } else {
-      clipPath.attr('id', clipPathId);
-    }
-
     let clipPathRects = clipPath.selectAll('rect').data(segments);
     let debugRects;
     if (debug) {
       debugRects = gDebug.selectAll('rect').data(segments);
     }
 
-    const evaluatedDefinition = evaluatedDefinitions[lineChunkName];
-
     // get stroke width to avoid having the clip rects clip the stroke
     // See https://github.com/pbeshai/d3-line-chunked/issues/2
     const strokeWidth = parseFloat(evaluatedDefinition.styles['stroke-width']
-      || root.select('.d3-line-chunked-defined').style('stroke-width')
+      || path.style('stroke-width') // reads from CSS too
       || evaluatedDefinition.attrs['stroke-width']);
     const strokeWidthClipAdjustment = strokeWidth;
     const clipRectY = yMin - strokeWidthClipAdjustment;
@@ -474,17 +466,17 @@ export default function () {
    * Helper function to draw the actual path
    */
   function renderPath(initialRender, transition, context, root, lineData,
-      segments, evaluatedDefinitions, line, initialLine, className,
-      chunkName, clipPathId) {
-    let path = root.select(`.${className}`);
+      evaluatedDefinition, line, initialLine, className, clipPathId) {
+    let path = root.select(`.${className.split(' ')[0]}`);
 
     // initial render
     if (path.empty()) {
       path = root.append('path');
     }
+    const pathSelection = path;
 
     if (clipPathId) {
-      path.attr('clip-path', `url(#${getClipPathId(false)})`);
+      path.attr('clip-path', `url(#${clipPathId})`);
     }
 
     // handle animations for initial render
@@ -493,7 +485,7 @@ export default function () {
     }
 
     // apply user defined styles and attributes
-    applyAttrsAndStyles(path, evaluatedDefinitions[chunkName]);
+    applyAttrsAndStyles(path, evaluatedDefinition);
 
     path.classed(className, true);
 
@@ -512,6 +504,9 @@ export default function () {
     } else {
       path.attr('d', () => line(lineData));
     }
+
+    // can't return path since it might have the transition
+    return pathSelection;
   }
 
   /**
@@ -561,57 +556,61 @@ export default function () {
     };
   }
 
+  function initializeClipPath(chunkName, root) {
+    if (chunkName === gapChunkName) {
+      return undefined;
+    }
+
+    let defs = root.select('defs');
+    if (defs.empty()) {
+      defs = root.append('defs');
+    }
+
+    // className = d3-line-chunked-clip-chunkName
+    let clipPath = defs.select('clipPath');
+
+    // initial render
+    if (clipPath.empty()) {
+      clipPath = defs.append('clipPath')
+        .attr('class', `d3-line-chunked-clip-${chunkName}`)
+        .attr('id', `d3-line-chunked-clip-${chunkName}-${counter++}`);
+    }
+
+    return clipPath.attr('id');
+  }
+
   /**
    * Render the paths for segments and gaps
    */
   function renderPaths(initialRender, transition, context, root, lineData,
-      segments, xDomain, yDomain, evaluatedDefinitions) {
+      segments, xExtent, yExtent, evaluatedDefinitions) {
     // update line functions and data depending on animation and render circumstances
-    const lineResults = getLineFunctions(lineData, initialRender, yDomain);
-    const { line, initialLine } = lineResults;
+    const lineResults = getLineFunctions(lineData, initialRender, yExtent);
+    // lineData possibly updated if extendEnds is true since we normalize to [x, y] format
+    const { line, initialLine, lineData: modifiedLineData } = lineResults;
 
-    // possibly updated if extendEnds is true since we normalize to [x, y] format
-    lineData = lineResults.lineData;
+    // for each chunk type, render a line
+    const chunkNames = getChunkNames();
 
-    renderPath(initialRender, transition, context, root, lineData,
-      segments, evaluatedDefinitions, line, initialLine,
-      'd3-line-chunked-defined', lineChunkName, getClipPathId(false));
+    chunkNames.forEach(chunkName => {
+      const clipPathId = initializeClipPath(chunkName, root);
 
-    renderPath(initialRender, transition, context, root, lineData,
-      segments, evaluatedDefinitions, line, initialLine,
-      'd3-line-chunked-undefined', gapChunkName);
-  }
+      let className = `d3-line-chunked-chunk-${chunkName}`;
+      if (chunkName === lineChunkName) {
+        className = `d3-line-chunked-defined ${className}`;
+      } else if (chunkName === gapChunkName) {
+        className = `d3-line-chunked-undefined ${className}`;
+      }
 
-  /**
-   * Helper function to process any attrs or styles passed in as functions
-   * using the provided `d` and `i`
-   *
-   * @param {Object} lineInput lineAttrs or lineStyles
-   * @param {Object} gapInput gapAttrs or gapStyles
-   * @param {Object} pointInput pointAttrs or pointStyles
-   * @param {Object|Array} d the input data
-   * @param {Number} i the index for this dataset
-   * @return {Object} { line, gap, point }
-   */
-  function evaluate(lineInput, gapInput, pointInput, d, i) {
-    function evalInput(input) {
-      return Object.keys(input).reduce((output, key) => {
-        let val = input[key];
+      const path = renderPath(initialRender, transition, context, root, modifiedLineData,
+        evaluatedDefinitions[chunkName], line, initialLine, className, clipPathId);
 
-        if (typeof val === 'function') {
-          val = val(d, i);
-        }
-
-        output[key] = val;
-        return output;
-      }, {});
-    }
-
-    return {
-      line: evalInput(lineInput),
-      gap: evalInput(gapInput),
-      point: evalInput(pointInput),
-    };
+      if (chunkName === lineChunkName) {
+        console.log('segments =', segments);
+        renderClipRects(initialRender, transition, context, root, segments, xExtent,
+          yExtent, evaluatedDefinitions[chunkName], path, clipPathId);
+      }
+    });
   }
 
   /**
@@ -650,11 +649,7 @@ export default function () {
     const evaluated = {};
 
     // get the list of chunks to create evaluated definitions for
-    const chunks = [
-      lineChunkName,
-      gapChunkName,
-      ...Object.keys(chunkDefinitions).filter(name => name !== lineChunkName && name !== gapChunkName),
-    ];
+    const chunks = getChunkNames();
 
     // for each chunk, evaluate the attrs and styles to use for lines and points
     chunks.forEach(chunkName => {
@@ -754,8 +749,6 @@ export default function () {
       renderCircles(initialRender, transition, context, root, points,
         evaluatedDefinitions);
       renderPaths(initialRender, transition, context, root, filteredLineData, segments,
-        xExtent, yExtent, evaluatedDefinitions);
-      renderClipRects(initialRender, transition, context, root, filteredLineData, segments,
         xExtent, yExtent, evaluatedDefinitions);
     });
   }
