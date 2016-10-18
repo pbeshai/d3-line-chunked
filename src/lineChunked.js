@@ -662,10 +662,12 @@ export default function () {
       const evaluatedChunk = {
         styles: Object.assign({},
           evaluateAttrsOrStyles(lineStyles),
+          evaluateAttrsOrStyles((chunkDefinitions[lineChunkName] || {}).styles),
           chunkName === gapChunkName ? evaluateAttrsOrStyles(gapStyles) : undefined,
           evaluateAttrsOrStyles(chunkDef.styles)),
         attrs: Object.assign({},
           evaluateAttrsOrStyles(lineAttrs),
+          evaluateAttrsOrStyles((chunkDefinitions[lineChunkName] || {}).attrs),
           chunkName === gapChunkName ? evaluateAttrsOrStyles(gapAttrs) : undefined,
           evaluateAttrsOrStyles(chunkDef.attrs)),
       };
