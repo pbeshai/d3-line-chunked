@@ -162,6 +162,119 @@ export default function () {
    */
   let debug = false;
 
+
+  /**
+   * Helper to get the chunk names that are defined
+   */
+  function getChunkNames() {
+    return [
+      lineChunkName,
+      gapChunkName,
+      ...Object.keys(chunkDefinitions).filter(name => name !== lineChunkName && name !== gapChunkName),
+    ];
+  }
+
+  /**
+   * Helper function to compute the contiguous segments of the data
+   * @param {String} chunkName the chunk name to match. points not matching are removed.
+   *   if undefined, uses 'line'.
+   * @param {Array} An array of segments (subarrays) of the defined line data (output from
+   *   computeDefinedSegments)
+   * @return {Array} An array of segments (subarrays) of the chunk line data
+   */
+  function computeChunkedSegments(chunkName, definedSegments) {
+    // helper that given two adjacent chunks, decides what line the chunk should be in.
+    // uses the one that came last in getChunkNames.
+    function chunkLineResolver(chunkNameA, chunkNameB, chunkNames) {
+      // TODO: allow user to configure this.
+      const aIndex = chunkNames.indexOf(chunkNameA);
+      const bIndex = chunkNames.indexOf(chunkNameB);
+
+      return aIndex > bIndex ? chunkNameA : chunkNameB;
+    }
+
+    // helper to split a segment into sub-segments based on the chunk name
+    function splitSegment(segment, chunkNames) {
+      let startNewSegment = true;
+
+      // helper for adding to a segment / creating a new one
+      function addToSegment(segments, d) {
+        // if we are starting a new segment, start it with this point
+        if (startNewSegment) {
+          segments.push([d]);
+          startNewSegment = false;
+
+        // otherwise add to the last segment
+        } else {
+          const lastSegment = segments[segments.length - 1];
+          lastSegment.push(d);
+        }
+      }
+
+      const segments = segment.reduce((segments, d, i) => {
+        const dChunkName = chunk(d);
+        const dPrev = segment[i - 1];
+        const dNext = segment[i + 1];
+
+        // if it matches name, add to the segment
+        if (dChunkName === chunkName) {
+          addToSegment(segments, d);
+        } else {
+          // check if this point belongs in the previous chunk:
+          let added = false;
+          // doesn't match chunk name, but does it go in the segment? as the end?
+          if (dPrev) {
+            const segmentChunkName = chunkLineResolver(chunk(dPrev), dChunkName, chunkNames);
+
+            // if it is supposed to be in this chunk, add it in
+            if (segmentChunkName === chunkName) {
+              addToSegment(segments, d);
+              added = true;
+              startNewSegment = false;
+            }
+          }
+
+          // doesn't belong in previous, so does it belong in next?
+          if (!added && dNext != null) {
+            // check if this point belongs in the next chunk
+            const nextSegmentChunkName = chunkLineResolver(dChunkName, chunk(dNext), chunkNames);
+
+            // if it's supposed to be in the next chunk, create it
+            if (nextSegmentChunkName === chunkName) {
+              segments.push([d]);
+              added = true;
+              startNewSegment = false;
+            } else {
+              startNewSegment = true;
+            }
+
+          // not previous or next
+          } else if (!added) {
+            startNewSegment = true;
+          }
+        }
+
+
+        return segments;
+      }, []);
+
+      return segments;
+    }
+
+    const chunkNames = getChunkNames();
+
+    const chunkSegments = definedSegments.reduce((carry, segment) => {
+      const newSegments = splitSegment(segment, chunkNames);
+      if (newSegments && newSegments.length) {
+        return carry.concat(newSegments);
+      }
+
+      return carry;
+    }, []);
+
+    return chunkSegments;
+  }
+
   /**
    * Helper function to compute the contiguous segments of the data
    * @param {Array} lineData the line data
@@ -169,15 +282,13 @@ export default function () {
    *   if undefined, uses 'line'.
    * @return {Array} An array of segments (subarrays) of the line data
    */
-  function computeSegments(lineData, chunkName = lineChunkName) {
+  function computeDefinedSegments(lineData) {
     let startNewSegment = true;
 
     // split into segments of continuous data
     const segments = lineData.reduce((segments, d) => {
-      // skip if this point has no data or is not part of this chunk
-      const dChunk = chunk(d);
-
-      if (!defined(d) || (dChunk != null && dChunk !== chunkName)) {
+      // skip if this point has no data
+      if (!defined(d)) {
         startNewSegment = true;
         return segments;
       }
@@ -228,17 +339,6 @@ export default function () {
     Object.keys(evaluatedDefinition[stylesKey]).forEach((style) => {
       selection.style(style, evaluatedDefinition[stylesKey][style]);
     });
-  }
-
-  /**
-   * Helper to get the chunk names that are defined
-   */
-  function getChunkNames() {
-    return [
-      lineChunkName,
-      gapChunkName,
-      ...Object.keys(chunkDefinitions).filter(name => name !== lineChunkName && name !== gapChunkName),
-    ];
   }
 
 
@@ -705,6 +805,8 @@ export default function () {
     // for each chunk type, render a line
     const chunkNames = getChunkNames();
 
+    const definedSegments = computeDefinedSegments(lineData);
+
     // for each chunk, draw a line, circles and clip rect
     chunkNames.forEach(chunkName => {
       const clipPathId = initializeClipPath(chunkName, root);
@@ -724,7 +826,7 @@ export default function () {
 
       if (chunkName !== gapChunkName) {
         // compute the segments and points for this chunk type
-        const segments = computeSegments(lineData, chunkName);
+        const segments = computeChunkedSegments(chunkName, definedSegments);
         const points = segments.filter(segment => segment.length === 1)
           .map(segment => ({
             // use random ID so they are treated as entering/exiting each time
