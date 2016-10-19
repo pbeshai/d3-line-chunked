@@ -49,6 +49,7 @@ tape('lineChunked() getter and setters work', function (t) {
   t.equal(chunked.isNext(d => d > 4).isNext()(3), false, 'isNext sets function');
   t.equal(chunked.chunk('my-chunk').chunk()(9), 'my-chunk', 'chunk makes constant function');
   t.equal(chunked.chunk(d => d > 4 ? 'foo' : 'bar').chunk()(5), 'foo', 'chunk sets function');
+  t.equal(chunked.chunkLineResolver((a, b) => a).chunkLineResolver()('a', 'b'), 'a', 'chunkLineResolver sets function');
   t.deepEqual(chunked.chunkDefinitions({ chunk1: { styles: { color: 'red' } } }).chunkDefinitions(), { chunk1: { styles: { color: 'red' } } }, 'chunkDefinitions sets object');
   t.equal(chunked.curve(d => 5).curve()(3), 5, 'curve sets function');
   t.deepEqual(chunked.lineStyles({ fill: 'red' }).lineStyles(), { fill: 'red' }, 'lineStyles sets object');
@@ -448,3 +449,53 @@ tape('lineChunked() with extendEnds set', function (t) {
   t.end();
 });
 
+tape('lineChunked() resolves chunk lines correctly', function (t) {
+  const document = jsdom.jsdom();
+  const g = select(document.body).append('svg').append('g');
+
+  const chunked = lineChunked()
+    .chunkDefinitions({
+      line: {
+        styles: { stroke: 'red', 'stroke-width': 0 }, // use stroke-width 0 to remove strokeWidth adjustments to params
+      },
+      gap: {
+        styles: { stroke: 'silver' },
+      },
+      chunk1: {
+        styles: { stroke: 'blue', 'stroke-width': 0 }, // use stroke-width 0 to remove strokeWidth adjustments to params
+      },
+    })
+    .chunk(d => d[1] > 1 ? 'chunk1' : 'line')
+    .defined(d => d[1] !== null);
+
+  const data = [[0, 2], [1, 1], [2, 2], [3, null], [4, 1], [5, 2], [6, 1], [7, 1], [8, null], [9, 2], [10, null]];
+  g.datum(data).call(chunked);
+  // console.log(g.node().innerHTML);
+
+  const expectedAttrs = {
+    line: [
+      { x: '1', width: '0' },
+      { x: '4', width: '0' },
+      { x: '6', width: '1' },
+    ],
+    chunk1: [
+      { x: '0', width: '2' },
+      { x: '4', width: '2' },
+      { x: '9', width: '0' },
+    ]
+  };
+  const lineRects = g.select('.d3-line-chunked-clip-line').selectAll('rect').nodes();
+  const chunk1Rects = g.select('.d3-line-chunked-clip-chunk1').selectAll('rect').nodes();
+
+  lineRects.forEach((rect, i) => {
+    t.equal(select(rect).attr('x'), expectedAttrs.line[i].x);
+    t.equal(select(rect).attr('width'), expectedAttrs.line[i].width);
+  });
+
+  chunk1Rects.forEach((rect, i) => {
+    t.equal(select(rect).attr('x'), expectedAttrs.chunk1[i].x);
+    t.equal(select(rect).attr('width'), expectedAttrs.chunk1[i].width);
+  });
+
+  t.end();
+});
