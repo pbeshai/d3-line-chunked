@@ -10,6 +10,10 @@ const undefinedLineClass = '.d3-line-chunked-undefined';
 const definedPointClass = '.d3-line-chunked-defined-point';
 
 function lengthOfPath(path) {
+  if (!path || path.empty()) {
+    return null;
+  }
+
   const d = path.attr('d');
   if (d == null || !d.length) {
     return 0;
@@ -43,6 +47,10 @@ tape('lineChunked() getter and setters work', function (t) {
   t.equal(chunked.defined(d => d > 4).defined()(5), true, 'defined sets function');
   t.equal(chunked.isNext(false).isNext()(3), false, 'isNext makes constant function');
   t.equal(chunked.isNext(d => d > 4).isNext()(3), false, 'isNext sets function');
+  t.equal(chunked.chunk('my-chunk').chunk()(9), 'my-chunk', 'chunk makes constant function');
+  t.equal(chunked.chunk(d => d > 4 ? 'foo' : 'bar').chunk()(5), 'foo', 'chunk sets function');
+  t.equal(chunked.chunkLineResolver((a, b) => a).chunkLineResolver()('a', 'b'), 'a', 'chunkLineResolver sets function');
+  t.deepEqual(chunked.chunkDefinitions({ chunk1: { styles: { color: 'red' } } }).chunkDefinitions(), { chunk1: { styles: { color: 'red' } } }, 'chunkDefinitions sets object');
   t.equal(chunked.curve(d => 5).curve()(3), 5, 'curve sets function');
   t.deepEqual(chunked.lineStyles({ fill: 'red' }).lineStyles(), { fill: 'red' }, 'lineStyles sets object');
   t.deepEqual(chunked.lineAttrs({ fill: 'red' }).lineAttrs(), { fill: 'red' }, 'lineAttrs sets object');
@@ -109,7 +117,7 @@ tape('lineChunked() with null transition to null', function (t) {
   const data = [[0, null]];
 
   g.datum(data).call(chunked).transition().call(chunked);
-  console.log(g.node().innerHTML);
+  // console.log(g.node().innerHTML);
 
   t.equal(lengthOfPath(g.select(definedLineClass)), 0);
   t.equal(lengthOfPath(g.select(undefinedLineClass)), 0);
@@ -140,6 +148,32 @@ tape('lineChunked() with many data points', function (t) {
   t.end();
 });
 
+// this test is important to make sure we don't keep adding in new paths
+tape('lineChunked() updates existing path', function (t) {
+  const document = jsdom.jsdom();
+  const g = select(document.body).append('svg').append('g');
+
+  const chunked = lineChunked().lineAttrs({ 'stroke-width': 0 });
+  const data = [[0, 1], [1, 2], [2, 1]];
+
+  g.datum(data).call(chunked);
+  // console.log(g.node().innerHTML);
+
+  t.equal(lengthOfPath(g.select(definedLineClass)), 3);
+  t.equal(lengthOfPath(g.select(undefinedLineClass)), 3);
+  t.equal(g.selectAll(definedLineClass).size(), 1);
+  t.equal(g.selectAll(undefinedLineClass).size(), 1);
+
+  g.datum([[5, 1], [3, 2]]).call(chunked);
+
+  t.equal(lengthOfPath(g.select(definedLineClass)), 2);
+  t.equal(lengthOfPath(g.select(undefinedLineClass)), 2);
+  t.equal(g.selectAll(definedLineClass).size(), 1);
+  t.equal(g.selectAll(undefinedLineClass).size(), 1);
+
+  t.end();
+});
+
 tape('lineChunked() with many data points and some undefined', function (t) {
   const document = jsdom.jsdom();
   const g = select(document.body).append('svg').append('g');
@@ -162,6 +196,136 @@ tape('lineChunked() with many data points and some undefined', function (t) {
   t.deepEqual(rectDimensions(rects.nodes()[0]), { x: '0', width: '1', y: '1', height: '2' });
   t.deepEqual(rectDimensions(rects.nodes()[1]), { x: '4', width: '0', y: '1', height: '2' });
   t.deepEqual(rectDimensions(rects.nodes()[2]), { x: '6', width: '1', y: '1', height: '2' });
+
+  t.end();
+});
+
+
+tape('lineChunked() sets attrs and styles', function (t) {
+  const document = jsdom.jsdom();
+  const g = select(document.body).append('svg').append('g');
+
+  const chunked = lineChunked()
+    .lineAttrs({
+      'stroke-width': 4,
+      stroke: (d, i) => i === 0 ? 'blue' : 'red',
+    })
+    .lineStyles({
+      fill: 'purple',
+      stroke: (d, i) => i === 0 ? 'orange' : 'green',
+    })
+    .gapAttrs({
+      'stroke-width': 2,
+      stroke: (d, i) => i === 0 ? 'teal' : 'cyan',
+    })
+    .gapStyles({
+      stroke: (d, i) => i === 0 ? 'magenta' : 'brown',
+    })
+    .pointAttrs({
+      'r': 20,
+    })
+    .pointStyles({
+      fill: 'maroon',
+      stroke: (d, i) => i === 0 ? 'indigo' : 'violet',
+    })
+    .defined(d => d[1] !== null);
+
+  const data = [[0, 1], [1, 2], [2, null], [3, null], [4, 1], [5, null], [6, 2], [7, 3]];
+
+  g.datum(data).call(chunked);
+  // console.log(g.node().innerHTML);
+
+  const line = g.select(definedLineClass);
+  const gap = g.select(undefinedLineClass);
+  const point = g.select('circle');
+
+  t.equal(line.attr('stroke-width'), '4');
+  t.equal(line.attr('stroke'), 'blue');
+  t.equal(line.style('fill'), 'purple');
+  t.equal(line.style('stroke'), 'orange');
+
+  t.equal(gap.attr('stroke-width'), '2');
+  t.equal(gap.attr('stroke'), 'teal');
+  t.equal(gap.style('fill'), 'purple');
+  t.equal(gap.style('stroke'), 'magenta');
+
+  t.equal(point.attr('r'), '20');
+  t.equal(point.attr('fill'), 'blue');
+  t.equal(point.style('fill'), 'maroon');
+  t.equal(point.style('stroke'), 'indigo');
+
+  t.end();
+});
+
+tape('lineChunked() sets attrs and styles via chunkDefinitions', function (t) {
+  const document = jsdom.jsdom();
+  const g = select(document.body).append('svg').append('g');
+
+  const chunked = lineChunked()
+    .chunkDefinitions({
+      line: {
+        attrs: {
+          'stroke-width': 4,
+          stroke: (d, i) => i === 0 ? 'blue' : 'red',
+        },
+        styles: {
+          fill: 'purple',
+          stroke: (d, i) => i === 0 ? 'orange' : 'green',
+        },
+        pointAttrs: {
+          'r': 20,
+        },
+        pointStyles: {
+          stroke: (d, i) => i === 0 ? 'indigo' : 'violet',
+        }
+      },
+      gap: {
+        attrs: {
+          'stroke-width': 2,
+          stroke: (d, i) => i === 0 ? 'teal' : 'cyan',
+        },
+        styles: {
+          stroke: (d, i) => i === 0 ? 'magenta' : 'brown',
+        }
+      },
+      chunk1: {
+        attrs: {
+          fill: 'orange',
+          'stroke-width': 5
+        },
+        styles: {
+          'stroke-dasharray': '2, 2'
+        },
+      }
+    })
+    .chunk(d => 'chunk1')
+    .defined(d => d[1] !== null);
+
+  const data = [[0, 1], [1, 2], [2, null], [3, null], [4, 1], [5, null], [6, 2], [7, 3]];
+
+  g.datum(data).call(chunked);
+  // console.log(g.node().innerHTML);
+
+  const line = g.select('.d3-line-chunked-chunk-chunk1');
+  const gap = g.select(undefinedLineClass);
+  const point = g.select('circle');
+
+  t.equal(line.attr('fill'), 'orange');
+  t.equal(line.attr('stroke-width'), '5');
+  t.equal(line.attr('stroke'), 'blue');
+  t.equal(line.style('fill'), 'purple');
+  t.equal(line.style('stroke'), 'orange');
+  t.equal(line.style('stroke-dasharray'), '2, 2');
+
+  t.equal(gap.attr('stroke-width'), '2');
+  t.equal(gap.attr('stroke'), 'teal');
+  t.equal(gap.style('fill'), 'purple');
+  t.equal(gap.style('stroke'), 'magenta');
+
+  t.equal(point.attr('r'), '20');
+  t.equal(point.attr('fill'), 'blue');
+  t.equal(point.style('fill'), 'orange');
+  t.equal(point.style('stroke'), 'indigo');
 
   t.end();
 });
@@ -281,6 +445,99 @@ tape('lineChunked() with extendEnds set', function (t) {
   t.deepEqual(rectDimensions(rects.nodes()[0]), { x: '1', width: '1', y: '1', height: '2' });
   t.deepEqual(rectDimensions(rects.nodes()[1]), { x: '4', width: '0', y: '1', height: '2' });
   t.deepEqual(rectDimensions(rects.nodes()[2]), { x: '6', width: '1', y: '1', height: '2' });
+
+  t.end();
+});
+
+tape('lineChunked() resolves chunk lines correctly', function (t) {
+  const document = jsdom.jsdom();
+  const g = select(document.body).append('svg').append('g');
+
+  const chunked = lineChunked()
+    .chunkDefinitions({
+      line: {
+        styles: { stroke: 'red', 'stroke-width': 0 }, // use stroke-width 0 to remove strokeWidth adjustments to params
+      },
+      gap: {
+        styles: { stroke: 'silver' },
+      },
+      chunk1: {
+        styles: { stroke: 'blue', 'stroke-width': 0 }, // use stroke-width 0 to remove strokeWidth adjustments to params
+      },
+    })
+    .chunk(d => d[1] > 1 ? 'chunk1' : 'line')
+    .defined(d => d[1] !== null);
+
+  const data = [[0, 2], [1, 1], [2, 2], [3, null], [4, 1], [5, 2], [6, 1], [7, 1], [8, null], [9, 2], [10, null]];
+  g.datum(data).call(chunked);
+  // console.log(g.node().innerHTML);
+
+  const expectedAttrs = {
+    line: [
+      { x: '1', width: '0' },
+      { x: '4', width: '0' },
+      { x: '6', width: '1' },
+    ],
+    chunk1: [
+      { x: '0', width: '2' },
+      { x: '4', width: '2' },
+      { x: '9', width: '0' },
+    ]
+  };
+  const lineRects = g.select('.d3-line-chunked-clip-line').selectAll('rect').nodes();
+  const chunk1Rects = g.select('.d3-line-chunked-clip-chunk1').selectAll('rect').nodes();
+
+  lineRects.forEach((rect, i) => {
+    t.equal(select(rect).attr('x'), expectedAttrs.line[i].x);
+    t.equal(select(rect).attr('width'), expectedAttrs.line[i].width);
+  });
+
+  chunk1Rects.forEach((rect, i) => {
+    t.equal(select(rect).attr('x'), expectedAttrs.chunk1[i].x);
+    t.equal(select(rect).attr('width'), expectedAttrs.chunk1[i].width);
+  });
+
+  t.end();
+});
+
+tape('lineChunked() puts circles above paths when using multiple chunks', function (t) {
+  const document = jsdom.jsdom();
+  const g = select(document.body).append('svg').append('g');
+
+  const chunked = lineChunked()
+    .chunkDefinitions({
+      line: {
+        styles: { stroke: 'red', 'stroke-width': 0 }, // use stroke-width 0 to remove strokeWidth adjustments to params
+      },
+      gap: {
+        styles: { stroke: 'silver' },
+      },
+      chunk1: {
+        styles: { stroke: 'blue', 'stroke-width': 0 }, // use stroke-width 0 to remove strokeWidth adjustments to params
+      },
+    })
+    .chunk(d => d[1] > 1 ? 'chunk1' : 'line')
+    .defined(d => d[1] !== null);
+
+  const data = [[0, 2], [1, 1], [2, 2], [3, null], [4, 1], [5, 2], [6, 1], [7, 1], [8, null], [9, 2], [10, null]];
+  g.datum(data).call(chunked);
+  // console.log(g.node().innerHTML);
+
+  const children = g.selectAll('*').nodes().map(node => node.nodeName.toLowerCase());
+
+  let lastPathIndex = -1;
+  let firstCircleIndex = Infinity;
+  children.forEach((child, i) => {
+    if (child === 'path') {
+      lastPathIndex = i;
+    }
+
+    if (firstCircleIndex === Infinity &&  child === 'circle') {
+      firstCircleIndex = i;
+    }
+  });
+
+  t.equal(lastPathIndex < firstCircleIndex, true, `last path was at ${lastPathIndex}, first circle was at ${firstCircleIndex}`);
 
   t.end();
 });

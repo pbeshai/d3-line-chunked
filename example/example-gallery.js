@@ -217,6 +217,77 @@
       },
     },
     {
+      label: 'Different styled chunks',
+      render: function typicalExample(root) {
+        var g = root.append('svg')
+          .attr('width', exampleWidth)
+          .attr('height', exampleHeight)
+          .append('g');
+
+        var chunked = d3.lineChunked()
+          .x(function (d) { return x(d[0]); })
+          .y(function (d) { return y(d[1]); })
+          .defined(function (d) { return d[1] !== null; })
+          .chunkDefinitions({
+            line: {
+              styles: {
+                stroke: '#0bb',
+              },
+            },
+            gap: {
+              styles: {
+                stroke: 'none'
+              }
+            },
+            chunk1: {
+              styles: {
+                'stroke-dasharray': '2, 2',
+                'stroke-opacity': 0.35,
+              },
+              pointStyles: {
+                'fill': '#fff',
+                'stroke': '#0bb',
+              }
+            }
+          })
+          .chunk(function (d) { return d[1] > 1 ? 'chunk1' : 'line'; });
+
+        var data = [[0, 2], [1, 1], [2, 2], [3, null], [3.5, 1], [4, 0.8], [4.5, null], [5, 1], [6, 2], [7, 1], [7.5, 1], [8, null], [9, 2], [10, null]];
+
+        g.datum(data).call(chunked);
+      },
+    },
+    {
+      label: 'Different styled chunks 2',
+      render: function typicalExample(root) {
+        var g = root.append('svg')
+          .attr('width', exampleWidth)
+          .attr('height', exampleHeight)
+          .append('g');
+
+        const chunked = d3.lineChunked()
+          .x(function (d) { return x(d[0]); })
+          .y(function (d) { return y(d[1]); })
+          .defined(function (d) { return d[1] !== null; })
+          .chunkDefinitions({
+            line: {
+              styles: { stroke: 'red' },
+            },
+            gap: {
+              styles: { stroke: 'silver' },
+            },
+            chunk1: {
+              styles: { stroke: 'blue' },
+            },
+          })
+          .chunk(function (d) { return d[1] > 1 ? 'chunk1' : 'line'; });
+
+        const data = [[0, 2], [1, 1], [2, 2], [3, null], [4, 1], [5, 2], [6, 1], [7, 1], [8, null], [9, 2], [10, null]];
+
+        g.datum(data).call(chunked);
+      },
+    },
+    {
       label: 'Transition: transitionInitial=true',
       transition: true,
       render: function transitionInitialTrue(root) {

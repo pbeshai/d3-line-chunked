@@ -2,8 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/d3-line-chunked.svg)](https://badge.fury.io/js/d3-line-chunked)
 
-A d3 plugin that renders a line with potential gaps in the data by styling the gaps differently
-from the defined areas. Single points are rendered as circles. Transitions are supported.
+A d3 plugin that renders a line with potential gaps in the data by styling the gaps differently from the defined areas. It also provides the ability to style arbitrary chunks of the defined data differently. Single points are rendered as circles and transitions are supported.
 
 Blog: [Showing Missing Data in Line Charts](https://bocoup.com/weblog/showing-missing-data-in-line-charts)
 
@@ -168,6 +167,49 @@ function isNext(previousDatum, currentDatum) {
 It is only necessary to define this if your data doesn't explicitly include gaps in it.
 
 The default returns `true` for all points.
+
+
+
+
+
+
+<a href="#lineChunked_chunk" name="lineChunked_chunk">#</a> *lineChunked*.**chunk**([*chunk*])
+
+Get or set *chunk*, a function that given a data point (`d`) returns the name of the chunk it belongs to. This is necessary if you want to have multiple styled chunks of the defined data. There are two reserved chunk names: `"line"` for the default line for defined data, and `"gap"` for undefined data. It is not recommended that you use `"gap"` in this function. The default value maps all data points to `"line"`.
+
+For example, if you wanted all points with y values less than 10 to be in the `"below-threshold"` chunk, you could do the following:
+
+```js
+// sample data
+var data = [{ x: 1, y: 5 }, { x: 2, y: 8 }, { x: 3, y: 12 }, { x: 4, y: 15 }, { x: 5, y: 6 }];
+
+// inspects the y value to determine which chunk to use.
+function chunk(d) {
+  return d.y < 10 ? 'below-threshold' : 'line';
+}
+```
+
+
+<a href="#lineChunked_chunkLineResolver" name="lineChunked_chunkLineResolver">#</a> *lineChunked*.**chunkLineResolver**([*chunkLineResolver*])
+
+Get or set *chunkLineResolver*, a function that decides what chunk the line should be rendered in when given two adjacent defined points that may or may not be in the same chunk via `chunk()`. The function takes three parameters:
+
+  * chunkNameLeft (*String*): The name of the chunk for the point on the left
+  * chunkNameRight (*String*): The name of the chunk for the point on the right
+  * chunkNames (*String[]*): The ordered list of chunk names from chunkDefinitions
+
+It returns the name of the chunk that the line segment should be rendered in. By default it uses the order of the keys in the chunkDefinition object..
+
+For example, if you wanted all lines between two different chunks to use the styling of the chunk that the left point belongs to, you could define *chunkLineResolver* as follows:
+
+```js
+// always take the chunk of the item on the left
+function chunkLineResolver(chunkNameA, chunkNameB, chunkNames) {
+  return chunkNameA;
+}
+```
+
+
 
 
 

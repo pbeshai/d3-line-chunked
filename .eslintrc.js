@@ -5,6 +5,7 @@ module.exports = {
     "browser": true
   },
   "rules": {
+    "max-len": [1, 120, { "ignoreComments": true, "ignoreTrailingComments": true, "ignoreUrls": true }],
     "no-shadow": 0,
     "no-param-reassign": 0,
     "no-console": 0,
