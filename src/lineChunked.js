@@ -182,6 +182,28 @@ export default function () {
 
 
   /**
+   * Logs warnings if the chunk definitions uses 'style' or 'attr' instead of
+   * 'styles' or 'attrs'
+   */
+  function validateChunkDefinitions() {
+    Object.keys(chunkDefinitions).forEach(key => {
+      const def = chunkDefinitions[key];
+      if (def.style != null) {
+        console.warn(`Warning: chunkDefinitions expects "styles", but found "style" in ${key}`, def);
+      }
+      if (def.attr != null) {
+        console.warn(`Warning: chunkDefinitions expects "attrs", but found "attr" in ${key}`, def);
+      }
+      if (def.pointStyle != null) {
+        console.warn(`Warning: chunkDefinitions expects "pointStyles", but found "pointStyle" in ${key}`, def);
+      }
+      if (def.pointAttr != null) {
+        console.warn(`Warning: chunkDefinitions expects "pointAttrs", but found "pointAttr" in ${key}`, def);
+      }
+    });
+  }
+
+  /**
    * Helper to get the chunk names that are defined. Prepends
    * line, gap to the start of the array unless useChunkDefOrder
    * is specified. In this case, it only prepends if they are
@@ -896,6 +918,9 @@ export default function () {
       const initialRender = root.select('.d3-line-chunked-defined').empty();
       renderLines(initialRender, transition, context, root, data, lineIndex);
     });
+
+    // provide warning about wrong attr/defs
+    validateChunkDefinitions();
   }
 
   // ------------------------------------------------
