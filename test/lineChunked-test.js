@@ -117,7 +117,7 @@ tape('lineChunked() with null transition to null', function (t) {
   const data = [[0, null]];
 
   g.datum(data).call(chunked).transition().call(chunked);
-  console.log(g.node().innerHTML);
+  // console.log(g.node().innerHTML);
 
   t.equal(lengthOfPath(g.select(definedLineClass)), 0);
   t.equal(lengthOfPath(g.select(undefinedLineClass)), 0);
@@ -537,7 +537,7 @@ tape('lineChunked() puts circles above paths when using multiple chunks', functi
     }
   });
 
-  t.equal(lastPathIndex < firstCircleIndex, true, `last path was at ${lastPathIndex} > first circle at ${firstCircleIndex}`);
+  t.equal(lastPathIndex < firstCircleIndex, true, `last path was at ${lastPathIndex}, first circle was at ${firstCircleIndex}`);
 
   t.end();
 });
