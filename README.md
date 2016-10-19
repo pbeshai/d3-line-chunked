@@ -169,50 +169,6 @@ It is only necessary to define this if your data doesn't explicitly include gaps
 The default returns `true` for all points.
 
 
-
-
-
-
-<a href="#lineChunked_chunk" name="lineChunked_chunk">#</a> *lineChunked*.**chunk**([*chunk*])
-
-Get or set *chunk*, a function that given a data point (`d`) returns the name of the chunk it belongs to. This is necessary if you want to have multiple styled chunks of the defined data. There are two reserved chunk names: `"line"` for the default line for defined data, and `"gap"` for undefined data. It is not recommended that you use `"gap"` in this function. The default value maps all data points to `"line"`.
-
-For example, if you wanted all points with y values less than 10 to be in the `"below-threshold"` chunk, you could do the following:
-
-```js
-// sample data
-var data = [{ x: 1, y: 5 }, { x: 2, y: 8 }, { x: 3, y: 12 }, { x: 4, y: 15 }, { x: 5, y: 6 }];
-
-// inspects the y value to determine which chunk to use.
-function chunk(d) {
-  return d.y < 10 ? 'below-threshold' : 'line';
-}
-```
-
-
-<a href="#lineChunked_chunkLineResolver" name="lineChunked_chunkLineResolver">#</a> *lineChunked*.**chunkLineResolver**([*chunkLineResolver*])
-
-Get or set *chunkLineResolver*, a function that decides what chunk the line should be rendered in when given two adjacent defined points that may or may not be in the same chunk via `chunk()`. The function takes three parameters:
-
-  * chunkNameLeft (*String*): The name of the chunk for the point on the left
-  * chunkNameRight (*String*): The name of the chunk for the point on the right
-  * chunkNames (*String[]*): The ordered list of chunk names from chunkDefinitions
-
-It returns the name of the chunk that the line segment should be rendered in. By default it uses the order of the keys in the chunkDefinition object..
-
-For example, if you wanted all lines between two different chunks to use the styling of the chunk that the left point belongs to, you could define *chunkLineResolver* as follows:
-
-```js
-// always take the chunk of the item on the left
-function chunkLineResolver(chunkNameA, chunkNameB, chunkNames) {
-  return chunkNameA;
-}
-```
-
-
-
-
-
 <a href="#lineChunked_transitionInitial" name="lineChunked_transitionInitial">#</a> *lineChunked*.**transitionInitial**([*transitionInitial*])
 
 Get or set *transitionInitial*, a boolean flag that indicates whether to perform a transition on initial render or not. If true and the *context* that *lineChunked* is called in is a transition, then the line will animate its y value on initial render. If false, the line will appear rendered immediately with no animation on initial render. This does not affect any subsequent renders and their respective transitions.
@@ -286,3 +242,89 @@ Get or set *pointStyles*, an object mapping style keys to style values to be app
 
 Get or set *pointAttrs*, an object mapping attr keys to attr values to be applied to points (circles). Note that if fill is not defined in *pointStyles* or *pointAttrs*, it will be read from the stroke color on the line itself. Uses syntax similar to [d3-selection-multi](https://github.com/d3/d3-selection-multi#selection_attrs).
 
+
+
+<a href="#lineChunked_chunk" name="lineChunked_chunk">#</a> *lineChunked*.**chunk**([*chunk*])
+
+Get or set *chunk*, a function that given a data point (`d`) returns the name of the chunk it belongs to. This is necessary if you want to have multiple styled chunks of the defined data. There are two reserved chunk names: `"line"` for the default line for defined data, and `"gap"` for undefined data. It is not recommended that you use `"gap"` in this function. The default value maps all data points to `"line"`.
+
+For example, if you wanted all points with y values less than 10 to be in the `"below-threshold"` chunk, you could do the following:
+
+```js
+// sample data
+var data = [{ x: 1, y: 5 }, { x: 2, y: 8 }, { x: 3, y: 12 }, { x: 4, y: 15 }, { x: 5, y: 6 }];
+
+// inspects the y value to determine which chunk to use.
+function chunk(d) {
+  return d.y < 10 ? 'below-threshold' : 'line';
+}
+```
+
+
+<a href="#lineChunked_chunkLineResolver" name="lineChunked_chunkLineResolver">#</a> *lineChunked*.**chunkLineResolver**([*chunkLineResolver*])
+
+Get or set *chunkLineResolver*, a function that decides what chunk the line should be rendered in when given two adjacent defined points that may or may not be in the same chunk via `chunk()`. The function takes three parameters:
+
+  * chunkNameLeft (*String*): The name of the chunk for the point on the left
+  * chunkNameRight (*String*): The name of the chunk for the point on the right
+  * chunkNames (*String[]*): The ordered list of chunk names from chunkDefinitions
+
+It returns the name of the chunk that the line segment should be rendered in. By default it uses the order of the keys in the chunkDefinition object..
+
+For example, if you wanted all lines between two different chunks to use the styling of the chunk that the left point belongs to, you could define *chunkLineResolver* as follows:
+
+```js
+// always take the chunk of the item on the left
+function chunkLineResolver(chunkNameA, chunkNameB, chunkNames) {
+  return chunkNameA;
+}
+```
+
+
+<a href="#lineChunked_chunkDefinitions" name="lineChunked_chunkDefinitions">#</a> *lineChunked*.**chunkDefinitions**([*chunkDefinitions*])
+
+Get or set *chunkDefinitions*, an object mapping chunk names to styling and attribute assignments for each chunk. The format is as follows:
+
+```
+{
+  chunkName1: {
+    styles: {},
+    attrs: {},
+    pointStyles: {},
+    pointAttrs: {},
+  },
+  ...
+}
+```
+
+Note that by using the reserved chunk names `"line"` and `"gap"`, you can accomplish the equivalent of setting `lineStyles`, `lineAttrs`, `gapStyles`, `gapAttrs`, `pointStyles`, and `pointAttrs` individually. Chunks default to reading settings defined for the chunk `"line"` (or by `lineStyles`, `lineAttrs`), so you can place base styles for  all chunks there and not have to duplicate them.
+
+Full multiple chunks example:
+
+```js
+const lineChunked = d3.lineChunked()
+  .defined(function (d) { return d[1] !== null; })
+  .chunkDefinitions({
+    line: {
+      styles: {
+        stroke: '#0bb',
+      },
+    },
+    gap: {
+      styles: {
+        stroke: 'none'
+      }
+    },
+    'below-threshold': {
+      styles: {
+        'stroke-dasharray': '2, 2',
+        'stroke-opacity': 0.35,
+      },
+      pointStyles: {
+        'fill': '#fff',
+        'stroke': '#0bb',
+      }
+    }
+  })
+  .chunk(function (d) { return d[1] < 2 ? 'below-threshold' : 'line'; });
+```
