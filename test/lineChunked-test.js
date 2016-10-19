@@ -499,3 +499,46 @@ tape('lineChunked() resolves chunk lines correctly', function (t) {
 
   t.end();
 });
+
+tape('lineChunked() puts circles above paths when using multiple chunks', function (t) {
+  const document = jsdom.jsdom();
+  const g = select(document.body).append('svg').append('g');
+
+  const chunked = lineChunked()
+    .chunkDefinitions({
+      line: {
+        styles: { stroke: 'red', 'stroke-width': 0 }, // use stroke-width 0 to remove strokeWidth adjustments to params
+      },
+      gap: {
+        styles: { stroke: 'silver' },
+      },
+      chunk1: {
+        styles: { stroke: 'blue', 'stroke-width': 0 }, // use stroke-width 0 to remove strokeWidth adjustments to params
+      },
+    })
+    .chunk(d => d[1] > 1 ? 'chunk1' : 'line')
+    .defined(d => d[1] !== null);
+
+  const data = [[0, 2], [1, 1], [2, 2], [3, null], [4, 1], [5, 2], [6, 1], [7, 1], [8, null], [9, 2], [10, null]];
+  g.datum(data).call(chunked);
+  // console.log(g.node().innerHTML);
+
+  const children = g.selectAll('*').nodes().map(node => node.nodeName.toLowerCase());
+
+  let lastPathIndex = -1;
+  let firstCircleIndex = Infinity;
+  children.forEach((child, i) => {
+    if (child === 'path') {
+      lastPathIndex = i;
+    }
+
+    if (firstCircleIndex === Infinity &&  child === 'circle') {
+      firstCircleIndex = i;
+    }
+  });
+
+  t.equal(lastPathIndex < firstCircleIndex, true, `last path was at ${lastPathIndex} > first circle at ${firstCircleIndex}`);
+
+  t.end();
+});
+

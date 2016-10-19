@@ -869,6 +869,9 @@ export default function () {
           yExtent, evaluatedDefinition, path, clipPathId);
       }
     });
+
+    // ensure all circles are at the top
+    root.selectAll('circle').raise();
   }
 
   // the main function that is returned
