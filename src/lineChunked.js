@@ -75,6 +75,24 @@ export default function () {
   let chunk = () => lineChunkName;
 
   /**
+   * Decides what line the chunk should be in when given two defined points
+   * in different chunks. Uses the order provided by the keys of chunkDefinition
+   * if not specified, with `line` and `gap` prepended to the list if not
+   * in the chunkDefinition object.
+   *
+   * @param {String} chunkNameLeft The name of the chunk for the point on the left
+   * @param {String} chunkNameRight The name of the chunk for the point on the right
+   * @param {String[]} chunkNames the ordered list of chunk names from chunkDefinitions
+   * @return {String} The name of the chunk to assign the line segment between the two points to.
+   */
+  let chunkLineResolver = function defaultChunkLineResolver(chunkNameLeft, chunkNameRight, chunkNames) {
+    const leftIndex = chunkNames.indexOf(chunkNameLeft);
+    const rightIndex = chunkNames.indexOf(chunkNameRight);
+
+    return leftIndex > rightIndex ? chunkNameLeft : chunkNameRight;
+  };
+
+  /**
    * Object specifying how to set style and attributes for each chunk.
    * Format is an object:
    *
@@ -164,35 +182,44 @@ export default function () {
 
 
   /**
-   * Helper to get the chunk names that are defined
+   * Helper to get the chunk names that are defined. Prepends
+   * line, gap to the start of the array unless useChunkDefOrder
+   * is specified. In this case, it only prepends if they are
+   * not specified in the chunk definitions.
    */
-  function getChunkNames() {
-    return [
-      lineChunkName,
-      gapChunkName,
-      ...Object.keys(chunkDefinitions).filter(name => name !== lineChunkName && name !== gapChunkName),
-    ];
+  function getChunkNames(useChunkDefOrder) {
+    const chunkDefNames = Object.keys(chunkDefinitions);
+    let prependLine = true;
+    let prependGap = true;
+
+    // if using chunk definition order, only prepend line/gap if they aren't in the
+    // chunk definition.
+    if (useChunkDefOrder) {
+      prependLine = !chunkDefNames.includes(lineChunkName);
+      prependGap = !chunkDefNames.includes(gapChunkName);
+    }
+
+    if (prependGap) {
+      chunkDefNames.unshift(gapChunkName);
+    }
+
+    if (prependLine) {
+      chunkDefNames.unshift(lineChunkName);
+    }
+
+    // remove duplicates and return
+    return chunkDefNames.filter((d, i, a) => a.indexOf(d) === i);
   }
 
   /**
    * Helper function to compute the contiguous segments of the data
    * @param {String} chunkName the chunk name to match. points not matching are removed.
    *   if undefined, uses 'line'.
-   * @param {Array} An array of segments (subarrays) of the defined line data (output from
+   * @param {Array} definedSegments An array of segments (subarrays) of the defined line data (output from
    *   computeDefinedSegments)
    * @return {Array} An array of segments (subarrays) of the chunk line data
    */
   function computeChunkedSegments(chunkName, definedSegments) {
-    // helper that given two adjacent chunks, decides what line the chunk should be in.
-    // uses the one that came last in getChunkNames.
-    function chunkLineResolver(chunkNameA, chunkNameB, chunkNames) {
-      // TODO: allow user to configure this.
-      const aIndex = chunkNames.indexOf(chunkNameA);
-      const bIndex = chunkNames.indexOf(chunkNameB);
-
-      return aIndex > bIndex ? chunkNameA : chunkNameB;
-    }
-
     // helper to split a segment into sub-segments based on the chunk name
     function splitSegment(segment, chunkNames) {
       let startNewSegment = true;
@@ -261,7 +288,7 @@ export default function () {
       return segments;
     }
 
-    const chunkNames = getChunkNames();
+    const chunkNames = getChunkNames(true);
 
     const chunkSegments = definedSegments.reduce((carry, segment) => {
       const newSegments = splitSegment(segment, chunkNames);
@@ -929,6 +956,13 @@ export default function () {
     set: (newValue) => { chunk = newValue; },
     setType: 'function',
     asConstant: (newValue) => () => newValue,
+  });
+
+  // define `chunkLineResolver([chunkLineResolver])`
+  lineChunked.chunkLineResolver = getterSetter({
+    get: () => chunkLineResolver,
+    set: (newValue) => { chunkLineResolver = newValue; },
+    setType: 'function',
   });
 
   // define `chunkDefinitions([chunkDefinitions])`
