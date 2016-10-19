@@ -17,3 +17,16 @@ body {
 .description {
   max-width: 800px;
 }
+
+.example-gallery .example {
+  display: inline-block;
+  margin-right: 15px;
+  margin-bottom: 15px;
+  border: 1px dotted #ccc;
+  padding: 10px;
+  vertical-align: top;
+}
+
+.example h3 {
+  margin-top: 0;
+}
