@@ -757,7 +757,9 @@ export default function () {
    *
    * @return {Object} { line, initialLine, lineData }
    */
-  function getLineFunctions(lineData, initialRender, [yMin, yMax]) { // eslint-disable-line no-unused-vars
+  function getLineFunctions(lineData, initialRender, yDomain) { // eslint-disable-line no-unused-vars
+    const yMax = yDomain[1];
+
     // main line function
     let line = d3Line().x(x).y(y).curve(curve);
     let initialLine;
