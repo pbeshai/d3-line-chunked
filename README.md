@@ -87,7 +87,7 @@ If you use NPM, `npm install d3-line-chunked`. Otherwise, download the [latest r
 Note that this project relies on the following d3 features and plugins:
 - [d3-array](https://github.com/d3/d3-array)
 - [d3-selection](https://github.com/d3/d3-selection)
-- [d3-shape](https://github.com/d3/d3-interpolate)
+- [d3-shape](https://github.com/d3/d3-shape)
 
 If you are using transitions, you will also need:
 - [d3-interpolate](https://github.com/d3/d3-interpolate)
