@@ -31,24 +31,25 @@
     "postpublish": "zip -j build/d3-line-chunked.zip -- LICENSE README.md build/d3-line-chunked.js build/d3-line-chunked.min.js"
   },
   "devDependencies": {
-    "babel-eslint": "^6.1.2",
-    "babel-preset-es2015-rollup": "^1.2.0",
-    "eslint": "^3.3.1",
-    "eslint-config-airbnb-base": "^5.0.2",
-    "eslint-plugin-import": "^1.13.0",
-    "jsdom": "^9.4.2",
-    "rollup": "^0.34.10",
-    "rollup-plugin-babel": "^2.6.1",
-    "rollup-watch": "^2.5.0",
-    "tape": "4",
-    "uglify-js": "2"
+    "@babel/core": "^7.12.3",
+    "@babel/plugin-external-helpers": "^7.12.1",
+    "@babel/preset-env": "^7.12.1",
+    "@rollup/plugin-babel": "^5.2.1",
+    "babel-eslint": "^10.1.0",
+    "eslint-config-airbnb-base": "^14.2.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint": "^7.12.1",
+    "jsdom": "^16.4.0",
+    "rollup": "^2.32.1",
+    "tape": "5",
+    "uglify-js": "3"
   },
   "dependencies": {
-    "d3-array": "^1.0.1",
-    "d3-interpolate": "^1.1.1",
-    "d3-interpolate-path": "^1.1.0",
-    "d3-selection": "^1.0.2",
-    "d3-shape": "^1.0.3",
-    "d3-transition": "^1.0.2"
+    "d3-array": "2 || ^1.0.1",
+    "d3-interpolate": "2 || ^1.1.1",
+    "d3-interpolate-path": "2 || ^1.1.0",
+    "d3-selection": "2 || ^1.0.2",
+    "d3-shape": "2 || ^1.0.3",
+    "d3-transition": "2 || ^1.0.2"
   }
 }

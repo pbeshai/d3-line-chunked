@@ -11,7 +11,7 @@ let counter = 0;
  * from the defined areas. Single points are rendered as circles. Transitions are
  * supported.
  */
-export default function () {
+export default function render() {
   const defaultLineAttrs = {
     fill: 'none',
     stroke: '#222',
