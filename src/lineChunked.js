@@ -814,8 +814,8 @@ export default function render() {
       clipPath = defs.append('clipPath')
         .attr('class', className)
         .attr('id', `d3-line-chunked-clip-${chunkName}-${counter}`);
+      counter += 1;
     }
-    counter += 1;
 
     return clipPath.attr('id');
   }
