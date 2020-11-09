@@ -9,6 +9,12 @@ const definedLineClass = '.d3-line-chunked-defined';
 const undefinedLineClass = '.d3-line-chunked-undefined';
 const definedPointClass = '.d3-line-chunked-defined-point';
 
+function getDocument() {
+  const { JSDOM } = jsdom;
+  const { document } = (new JSDOM('<!doctype html><html><body></body></html>')).window;
+  return document;
+}
+
 function lengthOfPath(path) {
   if (!path || path.empty()) {
     return null;
@@ -73,7 +79,7 @@ tape('lineChunked() getter and setters work', function (t) {
 */
 
 tape('lineChunked() with empty data', function (t) {
-  const document = jsdom.jsdom();
+  const document = getDocument();
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked();
@@ -92,7 +98,7 @@ tape('lineChunked() with empty data', function (t) {
 
 
 tape('lineChunked() with one data point', function (t) {
-  const document = jsdom.jsdom();
+  const document = getDocument();
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked();
@@ -110,7 +116,7 @@ tape('lineChunked() with one data point', function (t) {
 });
 
 tape('lineChunked() with null transition to null', function (t) {
-  const document = jsdom.jsdom();
+  const document = getDocument();
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked().defined(d => d[1] != null);
@@ -129,7 +135,7 @@ tape('lineChunked() with null transition to null', function (t) {
 
 
 tape('lineChunked() with many data points', function (t) {
-  const document = jsdom.jsdom();
+  const document = getDocument();
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked().lineAttrs({ 'stroke-width': 0 });
@@ -150,7 +156,7 @@ tape('lineChunked() with many data points', function (t) {
 
 // this test is important to make sure we don't keep adding in new paths
 tape('lineChunked() updates existing path', function (t) {
-  const document = jsdom.jsdom();
+  const document = getDocument();
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked().lineAttrs({ 'stroke-width': 0 });
@@ -175,7 +181,7 @@ tape('lineChunked() updates existing path', function (t) {
 });
 
 tape('lineChunked() with many data points and some undefined', function (t) {
-  const document = jsdom.jsdom();
+  const document = getDocument();
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked()
@@ -202,7 +208,7 @@ tape('lineChunked() with many data points and some undefined', function (t) {
 
 
 tape('lineChunked() sets attrs and styles', function (t) {
-  const document = jsdom.jsdom();
+  const document = getDocument();
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked()
@@ -258,7 +264,7 @@ tape('lineChunked() sets attrs and styles', function (t) {
 });
 
 tape('lineChunked() sets attrs and styles via chunkDefinitions', function (t) {
-  const document = jsdom.jsdom();
+  const document = getDocument();
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked()
@@ -333,7 +339,7 @@ tape('lineChunked() sets attrs and styles via chunkDefinitions', function (t) {
 
 
 tape('lineChunked() stroke width clipping adjustments', function (t) {
-  const document = jsdom.jsdom();
+  const document = getDocument();
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked()
@@ -360,7 +366,7 @@ tape('lineChunked() stroke width clipping adjustments', function (t) {
 
 
 tape('lineChunked() when context is a transition', function (t) {
-  const document = jsdom.jsdom();
+  const document = getDocument();
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked()
@@ -387,7 +393,7 @@ tape('lineChunked() when context is a transition', function (t) {
 
 
 tape('lineChunked() - defined and isNext can set gaps in data', function (t) {
-  const document = jsdom.jsdom();
+  const document = getDocument();
   const gDefined = select(document.body).append('svg').append('g');
 
   const chunkedDefined = lineChunked()
@@ -415,7 +421,7 @@ tape('lineChunked() - defined and isNext can set gaps in data', function (t) {
 });
 
 tape('lineChunked() with extendEnds set', function (t) {
-  const document = jsdom.jsdom();
+  const document = getDocument();
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked()
@@ -450,7 +456,7 @@ tape('lineChunked() with extendEnds set', function (t) {
 });
 
 tape('lineChunked() resolves chunk lines correctly', function (t) {
-  const document = jsdom.jsdom();
+  const document = getDocument();
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked()
@@ -501,7 +507,7 @@ tape('lineChunked() resolves chunk lines correctly', function (t) {
 });
 
 tape('lineChunked() puts circles above paths when using multiple chunks', function (t) {
-  const document = jsdom.jsdom();
+  const document = getDocument();
   const g = select(document.body).append('svg').append('g');
 
   const chunked = lineChunked()

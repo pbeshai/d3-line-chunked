@@ -1,4 +1,4 @@
-import babel from 'rollup-plugin-babel';
+import babel from '@rollup/plugin-babel';
 
 var globals = {
   'd3-array': 'd3',
@@ -10,13 +10,13 @@ var globals = {
 };
 
 export default {
-  entry: 'index.js',
-  moduleName: 'd3',
-  plugins: [babel()],
-  globals: globals,
+  input: 'index.js',
+  plugins: [
+    babel({ babelHelpers: 'bundled' })
+  ],
   external: Object.keys(globals),
-  targets: [
-    { format: 'umd', dest: 'build/d3-line-chunked.js' },
-    { format: 'umd', dest: 'example/d3-line-chunked.js' },
+  output: [
+    { extend: true, name: 'd3', format: 'umd', file: 'build/d3-line-chunked.js', globals, },
+    { extend: true, name: 'd3', format: 'umd', file: 'example/d3-line-chunked.js', globals, },
   ]
 };
