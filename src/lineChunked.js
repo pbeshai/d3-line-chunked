@@ -85,7 +85,11 @@ export default function render() {
    * @param {String[]} chunkNames the ordered list of chunk names from chunkDefinitions
    * @return {String} The name of the chunk to assign the line segment between the two points to.
    */
-  let chunkLineResolver = function defaultChunkLineResolver(chunkNameLeft, chunkNameRight, chunkNames) {
+  let chunkLineResolver = function defaultChunkLineResolver(
+    chunkNameLeft,
+    chunkNameRight,
+    chunkNames
+  ) {
     const leftIndex = chunkNames.indexOf(chunkNameLeft);
     const rightIndex = chunkNames.indexOf(chunkNameRight);
 
@@ -188,16 +192,28 @@ export default function render() {
     Object.keys(chunkDefinitions).forEach((key) => {
       const def = chunkDefinitions[key];
       if (def.style != null) {
-        console.warn(`Warning: chunkDefinitions expects "styles", but found "style" in ${key}`, def);
+        console.warn(
+          `Warning: chunkDefinitions expects "styles", but found "style" in ${key}`,
+          def
+        );
       }
       if (def.attr != null) {
-        console.warn(`Warning: chunkDefinitions expects "attrs", but found "attr" in ${key}`, def);
+        console.warn(
+          `Warning: chunkDefinitions expects "attrs", but found "attr" in ${key}`,
+          def
+        );
       }
       if (def.pointStyle != null) {
-        console.warn(`Warning: chunkDefinitions expects "pointStyles", but found "pointStyle" in ${key}`, def);
+        console.warn(
+          `Warning: chunkDefinitions expects "pointStyles", but found "pointStyle" in ${key}`,
+          def
+        );
       }
       if (def.pointAttr != null) {
-        console.warn(`Warning: chunkDefinitions expects "pointAttrs", but found "pointAttr" in ${key}`, def);
+        console.warn(
+          `Warning: chunkDefinitions expects "pointAttrs", but found "pointAttr" in ${key}`,
+          def
+        );
       }
     });
   }
@@ -252,7 +268,7 @@ export default function render() {
           segments.push([d]);
           startNewSegment = false;
 
-        // otherwise add to the last segment
+          // otherwise add to the last segment
         } else {
           const lastSegment = segments[segments.length - 1];
           lastSegment.push(d);
@@ -272,7 +288,11 @@ export default function render() {
           let added = false;
           // doesn't match chunk name, but does it go in the segment? as the end?
           if (dPrev) {
-            const segmentChunkName = chunkLineResolver(chunk(dPrev), dChunkName, chunkNames);
+            const segmentChunkName = chunkLineResolver(
+              chunk(dPrev),
+              dChunkName,
+              chunkNames
+            );
 
             // if it is supposed to be in this chunk, add it in
             if (segmentChunkName === chunkName) {
@@ -285,7 +305,11 @@ export default function render() {
           // doesn't belong in previous, so does it belong in next?
           if (!added && dNext != null) {
             // check if this point belongs in the next chunk
-            const nextSegmentChunkName = chunkLineResolver(dChunkName, chunk(dNext), chunkNames);
+            const nextSegmentChunkName = chunkLineResolver(
+              dChunkName,
+              chunk(dNext),
+              chunkNames
+            );
 
             // if it's supposed to be in the next chunk, create it
             if (nextSegmentChunkName === chunkName) {
@@ -296,7 +320,7 @@ export default function render() {
               startNewSegment = true;
             }
 
-          // not previous or next
+            // not previous or next
           } else if (!added) {
             startNewSegment = true;
           }
@@ -345,7 +369,7 @@ export default function render() {
         segments.push([d]);
         startNewSegment = false;
 
-      // otherwise see if we are adding to the last segment
+        // otherwise see if we are adding to the last segment
       } else {
         const lastSegment = segments[segments.length - 1];
         const lastDatum = lastSegment[lastSegment.length - 1];
@@ -353,7 +377,7 @@ export default function render() {
         if (isNext(lastDatum, d)) {
           lastSegment.push(d);
 
-        // otherwise create a new segment
+          // otherwise create a new segment
         } else {
           segments.push([d]);
         }
@@ -432,14 +456,22 @@ export default function render() {
       const evaluatedChunk = {
         styles: {
           ...evaluateAttrsOrStyles(lineStyles),
-          ...evaluateAttrsOrStyles((chunkDefinitions[lineChunkName] || {}).styles),
-          ...(chunkName === gapChunkName ? evaluateAttrsOrStyles(gapStyles) : undefined),
+          ...evaluateAttrsOrStyles(
+            (chunkDefinitions[lineChunkName] || {}).styles
+          ),
+          ...(chunkName === gapChunkName
+            ? evaluateAttrsOrStyles(gapStyles)
+            : undefined),
           ...evaluateAttrsOrStyles(chunkDef.styles),
         },
         attrs: {
           ...evaluateAttrsOrStyles(lineAttrs),
-          ...evaluateAttrsOrStyles((chunkDefinitions[lineChunkName] || {}).attrs),
-          ...(chunkName === gapChunkName ? evaluateAttrsOrStyles(gapAttrs) : undefined),
+          ...evaluateAttrsOrStyles(
+            (chunkDefinitions[lineChunkName] || {}).attrs
+          ),
+          ...(chunkName === gapChunkName
+            ? evaluateAttrsOrStyles(gapAttrs)
+            : undefined),
           ...evaluateAttrsOrStyles(chunkDef.attrs),
         },
       };
@@ -447,15 +479,20 @@ export default function render() {
       // set point attrs. defaults read from this chunk's line settings.
       const basePointAttrs = {
         fill: evaluatedChunk.attrs.stroke,
-        r: evaluatedChunk.attrs['stroke-width'] == null
-          ? undefined
-          : parseFloat(evaluatedChunk.attrs['stroke-width']) + 1,
+        r:
+          evaluatedChunk.attrs['stroke-width'] == null
+            ? undefined
+            : parseFloat(evaluatedChunk.attrs['stroke-width']) + 1,
       };
 
-      evaluatedChunk.pointAttrs = Object.assign(basePointAttrs,
+      evaluatedChunk.pointAttrs = Object.assign(
+        basePointAttrs,
         evaluateAttrsOrStyles(pointAttrs),
-        evaluateAttrsOrStyles((chunkDefinitions[lineChunkName] || {}).pointAttrs),
-        evaluateAttrsOrStyles(chunkDef.pointAttrs));
+        evaluateAttrsOrStyles(
+          (chunkDefinitions[lineChunkName] || {}).pointAttrs
+        ),
+        evaluateAttrsOrStyles(chunkDef.pointAttrs)
+      );
 
       // ensure `r` is a number (helps to remove 'px' if provided)
       if (evaluatedChunk.pointAttrs.r != null) {
@@ -463,14 +500,21 @@ export default function render() {
       }
 
       // set point styles. if no fill attr set, use the line style stroke. otherwise read from the attr.
-      const basePointStyles = (chunkDef.pointAttrs && chunkDef.pointAttrs.fill != null) ? {} : {
-        fill: evaluatedChunk.styles.stroke,
-      };
+      const basePointStyles =
+        chunkDef.pointAttrs && chunkDef.pointAttrs.fill != null
+          ? {}
+          : {
+              fill: evaluatedChunk.styles.stroke,
+            };
 
-      evaluatedChunk.pointStyles = Object.assign(basePointStyles,
+      evaluatedChunk.pointStyles = Object.assign(
+        basePointStyles,
         evaluateAttrsOrStyles(pointStyles),
-        evaluateAttrsOrStyles((chunkDefinitions[lineChunkName] || {}).pointStyles),
-        evaluateAttrsOrStyles(chunkDef.pointStyles));
+        evaluateAttrsOrStyles(
+          (chunkDefinitions[lineChunkName] || {}).pointStyles
+        ),
+        evaluateAttrsOrStyles(chunkDef.pointStyles)
+      );
 
       evaluated[chunkName] = evaluatedChunk;
     });
@@ -481,9 +525,19 @@ export default function render() {
   /**
    * Render the points for when segments have length 1.
    */
-  function renderCircles(initialRender, transition, context, root, points, evaluatedDefinition, className) {
+  function renderCircles(
+    initialRender,
+    transition,
+    context,
+    root,
+    points,
+    evaluatedDefinition,
+    className
+  ) {
     const primaryClassName = className.split(' ')[0];
-    let circles = root.selectAll(`.${primaryClassName}`).data(points, (d) => d.id);
+    let circles = root
+      .selectAll(`.${primaryClassName}`)
+      .data(points, (d) => d.id);
 
     // read in properties about the transition if we have one
     const transitionDuration = transition ? context.duration() : 0;
@@ -491,7 +545,8 @@ export default function render() {
 
     // EXIT
     if (transition) {
-      circles.exit()
+      circles
+        .exit()
         .transition()
         .delay(transitionDelay)
         .duration(transitionDuration * 0.05)
@@ -514,7 +569,10 @@ export default function render() {
       .attr('cy', (d) => y(d.data));
 
     // handle with transition
-    if ((!initialRender || (initialRender && transitionInitial)) && transition) {
+    if (
+      (!initialRender || (initialRender && transitionInitial)) &&
+      transition
+    ) {
       const enterDuration = transitionDuration * 0.15;
 
       // delay sizing up the radius until after the line transition
@@ -531,13 +589,24 @@ export default function render() {
     if (transition) {
       circles = circles.transition(context);
     }
-    circles.attr('r', evaluatedDefinition.pointAttrs.r)
+    circles
+      .attr('r', evaluatedDefinition.pointAttrs.r)
       .attr('cx', (d) => x(d.data))
       .attr('cy', (d) => y(d.data));
   }
 
-  function renderClipRects(initialRender, transition, context, root, segments,
-    [xMin, xMax], [yMin, yMax], evaluatedDefinition, path, clipPathId) {
+  function renderClipRects(
+    initialRender,
+    transition,
+    context,
+    root,
+    segments,
+    [xMin, xMax],
+    [yMin, yMax],
+    evaluatedDefinition,
+    path,
+    clipPathId
+  ) {
     // TODO: issue with assigning IDs to clipPath elements. need to update how we select/create them
     // need reference to path element to set stroke-width property
     const clipPath = root.select(`#${clipPathId}`);
@@ -558,12 +627,15 @@ export default function render() {
 
     // get stroke width to avoid having the clip rects clip the stroke
     // See https://github.com/pbeshai/d3-line-chunked/issues/2
-    const strokeWidth = parseFloat(evaluatedDefinition.styles['stroke-width']
-      || path.style('stroke-width') // reads from CSS too
-      || evaluatedDefinition.attrs['stroke-width']);
+    const strokeWidth = parseFloat(
+      evaluatedDefinition.styles['stroke-width'] ||
+        path.style('stroke-width') || // reads from CSS too
+        evaluatedDefinition.attrs['stroke-width']
+    );
     const strokeWidthClipAdjustment = strokeWidth;
     const clipRectY = yMin - strokeWidthClipAdjustment;
-    const clipRectHeight = (yMax + strokeWidthClipAdjustment) - (yMin - strokeWidthClipAdjustment);
+    const clipRectHeight =
+      yMax + strokeWidthClipAdjustment - (yMin - strokeWidthClipAdjustment);
 
     // compute the currently visible area pairs of [xStart, xEnd] for each clip rect
     // if no clip rects, the whole area is visible.
@@ -599,11 +671,14 @@ export default function render() {
 
       // compute the start and end x values for a data point based on maximizing visibility
       // around the middle of the rect.
-      function visibleStartEnd(d, visibleArea) { // eslint-disable-line no-inner-declarations
+      function visibleStartEnd(d, visibleArea) {
+        // eslint-disable-line no-inner-declarations
         const xStart = x(d[0]);
         const xEnd = x(d[d.length - 1]);
-        const xMid = xStart + ((xEnd - xStart) / 2);
-        const visArea = visibleArea.find((area) => area[0] <= xMid && xMid <= area[1]);
+        const xMid = xStart + (xEnd - xStart) / 2;
+        const visArea = visibleArea.find(
+          (area) => area[0] <= xMid && xMid <= area[1]
+        );
 
         // set width to overlapping visible area
         if (visArea) {
@@ -614,7 +689,8 @@ export default function render() {
         return [xMid, xMid];
       }
 
-      function exitRect(rect) { // eslint-disable-line no-inner-declarations
+      function exitRect(rect) {
+        // eslint-disable-line no-inner-declarations
         rect
           .attr('x', (d) => visibleStartEnd(d, nextVisibleArea)[0])
           .attr('width', (d) => {
@@ -623,7 +699,8 @@ export default function render() {
           });
       }
 
-      function enterRect(rect) { // eslint-disable-line no-inner-declarations
+      function enterRect(rect) {
+        // eslint-disable-line no-inner-declarations
         rect
           .attr('x', (d) => visibleStartEnd(d, visibleArea)[0])
           .attr('width', (d) => {
@@ -635,14 +712,19 @@ export default function render() {
       }
 
       clipPathRects.exit().transition(context).call(exitRect).remove();
-      const clipPathRectsEnter = clipPathRects.enter().append('rect').call(enterRect);
+      const clipPathRectsEnter = clipPathRects
+        .enter()
+        .append('rect')
+        .call(enterRect);
       clipPathRects = clipPathRects.merge(clipPathRectsEnter);
       clipPathRects = clipPathRects.transition(context);
 
       // debug rects should match clipPathRects
       if (debug) {
         debugRects.exit().transition(context).call(exitRect).remove();
-        const debugRectsEnter = debugRects.enter().append('rect')
+        const debugRectsEnter = debugRects
+          .enter()
+          .append('rect')
           .style('fill', 'rgba(255, 0, 0, 0.3)')
           .style('stroke', 'rgba(255, 0, 0, 0.6)')
           .call(enterRect);
@@ -651,7 +733,7 @@ export default function render() {
         debugRects = debugRects.transition(context);
       }
 
-    // not in transition
+      // not in transition
     } else {
       clipPathRects.exit().remove();
       const clipPathRectsEnter = clipPathRects.enter().append('rect');
@@ -659,7 +741,9 @@ export default function render() {
 
       if (debug) {
         debugRects.exit().remove();
-        const debugRectsEnter = debugRects.enter().append('rect')
+        const debugRectsEnter = debugRects
+          .enter()
+          .append('rect')
           .style('fill', 'rgba(255, 0, 0, 0.3)')
           .style('stroke', 'rgba(255, 0, 0, 0.6)');
         debugRects = debugRects.merge(debugRectsEnter);
@@ -668,16 +752,17 @@ export default function render() {
 
     // after transition, update the clip rect dimensions
     function updateRect(rect) {
-      rect.attr('x', (d) => {
-        // if at the edge, adjust for stroke width
-        const val = x(d[0]);
-        if (val === xMin) {
-          return val - strokeWidthClipAdjustment;
-        }
-        return val;
-      })
+      rect
+        .attr('x', (d) => {
+          // if at the edge, adjust for stroke width
+          const val = x(d[0]);
+          if (val === xMin) {
+            return val - strokeWidthClipAdjustment;
+          }
+          return val;
+        })
         .attr('width', (d) => {
-        // if at the edge, adjust for stroke width to prevent clipping it
+          // if at the edge, adjust for stroke width to prevent clipping it
           let valMin = x(d[0]);
           let valMax = x(d[d.length - 1]);
           if (valMin === xMin) {
@@ -702,8 +787,18 @@ export default function render() {
   /**
    * Helper function to draw the actual path
    */
-  function renderPath(initialRender, transition, context, root, lineData,
-    evaluatedDefinition, line, initialLine, className, clipPathId) {
+  function renderPath(
+    initialRender,
+    transition,
+    context,
+    root,
+    lineData,
+    evaluatedDefinition,
+    line,
+    initialLine,
+    className,
+    clipPathId
+  ) {
     let path = root.select(`.${className.split(' ')[0]}`);
 
     // initial render
@@ -752,7 +847,8 @@ export default function render() {
    *
    * @return {Object} { line, initialLine, lineData }
    */
-  function getLineFunctions(lineData, initialRender, yDomain) { // eslint-disable-line no-unused-vars
+  function getLineFunctions(lineData, initialRender, yDomain) {
+    // eslint-disable-line no-unused-vars
     const yMax = yDomain[1];
 
     // main line function
@@ -811,7 +907,8 @@ export default function render() {
 
     // initial render
     if (clipPath.empty()) {
-      clipPath = defs.append('clipPath')
+      clipPath = defs
+        .append('clipPath')
         .attr('class', className)
         .attr('id', `d3-line-chunked-clip-${chunkName}-${counter}`);
       counter += 1;
@@ -823,7 +920,14 @@ export default function render() {
   /**
    * Render the lines: circles, paths, clip rects for the given (data, lineIndex)
    */
-  function renderLines(initialRender, transition, context, root, data, lineIndex) {
+  function renderLines(
+    initialRender,
+    transition,
+    context,
+    root,
+    data,
+    lineIndex
+  ) {
     // use the accessor if provided (e.g. if the data is something like
     // `{ results: [[x,y], [[x,y], ...]}`)
     const lineData = accessData(data);
@@ -844,7 +948,11 @@ export default function render() {
     const evaluatedDefinitions = evaluateDefinitions(data, lineIndex);
 
     // update line functions and data depending on animation and render circumstances
-    const lineResults = getLineFunctions(filteredLineData, initialRender, yExtent);
+    const lineResults = getLineFunctions(
+      filteredLineData,
+      initialRender,
+      yExtent
+    );
 
     // lineData possibly updated if extendEnds is true since we normalize to [x, y] format
     const { line, initialLine, lineData: modifiedLineData } = lineResults;
@@ -868,25 +976,56 @@ export default function render() {
       // get the eval defs for this chunk name
       const evaluatedDefinition = evaluatedDefinitions[chunkName];
 
-      const path = renderPath(initialRender, transition, context, root, modifiedLineData,
-        evaluatedDefinition, line, initialLine, className, clipPathId);
+      const path = renderPath(
+        initialRender,
+        transition,
+        context,
+        root,
+        modifiedLineData,
+        evaluatedDefinition,
+        line,
+        initialLine,
+        className,
+        clipPathId
+      );
 
       if (chunkName !== gapChunkName) {
         // compute the segments and points for this chunk type
         const segments = computeChunkedSegments(chunkName, definedSegments);
-        const points = segments.filter((segment) => segment.length === 1)
+        const points = segments
+          .filter((segment) => segment.length === 1)
           .map((segment) => ({
             // use random ID so they are treated as entering/exiting each time
             id: x(segment[0]),
             data: segment[0],
           }));
 
-        const circlesClassName = className.split(' ').map((name) => `${name}-point`).join(' ');
-        renderCircles(initialRender, transition, context, root, points,
-          evaluatedDefinition, circlesClassName);
+        const circlesClassName = className
+          .split(' ')
+          .map((name) => `${name}-point`)
+          .join(' ');
+        renderCircles(
+          initialRender,
+          transition,
+          context,
+          root,
+          points,
+          evaluatedDefinition,
+          circlesClassName
+        );
 
-        renderClipRects(initialRender, transition, context, root, segments, xExtent,
-          yExtent, evaluatedDefinition, path, clipPathId);
+        renderClipRects(
+          initialRender,
+          transition,
+          context,
+          root,
+          segments,
+          xExtent,
+          yExtent,
+          evaluatedDefinition,
+          path,
+          clipPathId
+        );
       }
     });
 
@@ -924,17 +1063,18 @@ export default function render() {
   // ------------------------------------------------
   // Define getters and setters
   // ------------------------------------------------
-  function getterSetter({
-    get, set, setType, asConstant,
-  }) {
+  function getterSetter({ get, set, setType, asConstant }) {
     return function getSet(newValue) {
       if (arguments.length) {
         // main setter if setType matches newValue type
         // eslint-disable-next-line valid-typeof
-        if ((!setType && newValue != null) || (setType && typeof newValue === setType)) {
+        if (
+          (!setType && newValue != null) ||
+          (setType && typeof newValue === setType)
+        ) {
           set(newValue);
 
-        // setter to constant function if provided
+          // setter to constant function if provided
         } else if (asConstant && newValue != null) {
           set(asConstant(newValue));
         }
@@ -950,7 +1090,9 @@ export default function render() {
   // define `x([x])`
   lineChunked.x = getterSetter({
     get: () => x,
-    set: (newValue) => { x = newValue; },
+    set: (newValue) => {
+      x = newValue;
+    },
     setType: 'function',
     asConstant: (newValue) => () => +newValue, // d3 v4 uses +, so we do too
   });
@@ -958,7 +1100,9 @@ export default function render() {
   // define `y([y])`
   lineChunked.y = getterSetter({
     get: () => y,
-    set: (newValue) => { y = newValue; },
+    set: (newValue) => {
+      y = newValue;
+    },
     setType: 'function',
     asConstant: (newValue) => () => +newValue,
   });
@@ -966,7 +1110,9 @@ export default function render() {
   // define `defined([defined])`
   lineChunked.defined = getterSetter({
     get: () => defined,
-    set: (newValue) => { defined = newValue; },
+    set: (newValue) => {
+      defined = newValue;
+    },
     setType: 'function',
     asConstant: (newValue) => () => !!newValue,
   });
@@ -974,7 +1120,9 @@ export default function render() {
   // define `isNext([isNext])`
   lineChunked.isNext = getterSetter({
     get: () => isNext,
-    set: (newValue) => { isNext = newValue; },
+    set: (newValue) => {
+      isNext = newValue;
+    },
     setType: 'function',
     asConstant: (newValue) => () => !!newValue,
   });
@@ -982,7 +1130,9 @@ export default function render() {
   // define `chunk([chunk])`
   lineChunked.chunk = getterSetter({
     get: () => chunk,
-    set: (newValue) => { chunk = newValue; },
+    set: (newValue) => {
+      chunk = newValue;
+    },
     setType: 'function',
     asConstant: (newValue) => () => newValue,
   });
@@ -990,84 +1140,108 @@ export default function render() {
   // define `chunkLineResolver([chunkLineResolver])`
   lineChunked.chunkLineResolver = getterSetter({
     get: () => chunkLineResolver,
-    set: (newValue) => { chunkLineResolver = newValue; },
+    set: (newValue) => {
+      chunkLineResolver = newValue;
+    },
     setType: 'function',
   });
 
   // define `chunkDefinitions([chunkDefinitions])`
   lineChunked.chunkDefinitions = getterSetter({
     get: () => chunkDefinitions,
-    set: (newValue) => { chunkDefinitions = newValue; },
+    set: (newValue) => {
+      chunkDefinitions = newValue;
+    },
     setType: 'object',
   });
 
   // define `curve([curve])`
   lineChunked.curve = getterSetter({
     get: () => curve,
-    set: (newValue) => { curve = newValue; },
+    set: (newValue) => {
+      curve = newValue;
+    },
     setType: 'function',
   });
 
   // define `lineStyles([lineStyles])`
   lineChunked.lineStyles = getterSetter({
     get: () => lineStyles,
-    set: (newValue) => { lineStyles = newValue; },
+    set: (newValue) => {
+      lineStyles = newValue;
+    },
     setType: 'object',
   });
 
   // define `gapStyles([gapStyles])`
   lineChunked.gapStyles = getterSetter({
     get: () => gapStyles,
-    set: (newValue) => { gapStyles = newValue; },
+    set: (newValue) => {
+      gapStyles = newValue;
+    },
     setType: 'object',
   });
 
   // define `pointStyles([pointStyles])`
   lineChunked.pointStyles = getterSetter({
     get: () => pointStyles,
-    set: (newValue) => { pointStyles = newValue; },
+    set: (newValue) => {
+      pointStyles = newValue;
+    },
     setType: 'object',
   });
 
   // define `lineAttrs([lineAttrs])`
   lineChunked.lineAttrs = getterSetter({
     get: () => lineAttrs,
-    set: (newValue) => { lineAttrs = newValue; },
+    set: (newValue) => {
+      lineAttrs = newValue;
+    },
     setType: 'object',
   });
 
   // define `gapAttrs([gapAttrs])`
   lineChunked.gapAttrs = getterSetter({
     get: () => gapAttrs,
-    set: (newValue) => { gapAttrs = newValue; },
+    set: (newValue) => {
+      gapAttrs = newValue;
+    },
     setType: 'object',
   });
 
   // define `pointAttrs([pointAttrs])`
   lineChunked.pointAttrs = getterSetter({
     get: () => pointAttrs,
-    set: (newValue) => { pointAttrs = newValue; },
+    set: (newValue) => {
+      pointAttrs = newValue;
+    },
     setType: 'object',
   });
 
   // define `transitionInitial([transitionInitial])`
   lineChunked.transitionInitial = getterSetter({
     get: () => transitionInitial,
-    set: (newValue) => { transitionInitial = newValue; },
+    set: (newValue) => {
+      transitionInitial = newValue;
+    },
     setType: 'boolean',
   });
 
   // define `extendEnds([extendEnds])`
   lineChunked.extendEnds = getterSetter({
     get: () => extendEnds,
-    set: (newValue) => { extendEnds = newValue; },
+    set: (newValue) => {
+      extendEnds = newValue;
+    },
     setType: 'object', // should be an array
   });
 
   // define `accessData([accessData])`
   lineChunked.accessData = getterSetter({
     get: () => accessData,
-    set: (newValue) => { accessData = newValue; },
+    set: (newValue) => {
+      accessData = newValue;
+    },
     setType: 'function',
     asConstant: (newValue) => (d) => d[newValue],
   });
@@ -1075,7 +1249,9 @@ export default function render() {
   // define `debug([debug])`
   lineChunked.debug = getterSetter({
     get: () => debug,
-    set: (newValue) => { debug = newValue; },
+    set: (newValue) => {
+      debug = newValue;
+    },
     setType: 'boolean',
   });
 
