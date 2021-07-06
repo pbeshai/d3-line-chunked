@@ -1,4 +1,4 @@
-# d3-line-chunked
+# d3-line-chunked-test
 
 [![npm version](https://badge.fury.io/js/d3-line-chunked.svg)](https://badge.fury.io/js/d3-line-chunked)
 
