@@ -21,10 +21,11 @@
     "type": "git",
     "url": "https://github.com/pbeshai/d3-line-chunked.git"
   },
+  "type": "module",
   "scripts": {
     "build": "rm -rf build && mkdir build && rollup --config rollup.config.js",
     "watch": "rollup --config rollup.config.js --watch",
-    "lint": "eslint -c .eslintrc.js src",
+    "lint": "eslint -c .eslintrc.cjs src",
     "prettier": "prettier --write \"src/**/*.js\"",
     "pretest": "npm run build",
     "test": "tape 'test/**/*-test.js'",
@@ -32,27 +33,27 @@
     "postpublish": "zip -j build/d3-line-chunked.zip -- LICENSE README.md build/d3-line-chunked.js build/d3-line-chunked.min.js"
   },
   "devDependencies": {
-    "@babel/core": "^7.12.3",
-    "@babel/plugin-external-helpers": "^7.12.1",
-    "@babel/preset-env": "^7.12.1",
-    "@rollup/plugin-babel": "^5.2.1",
+    "@babel/core": "^7.15.8",
+    "@babel/plugin-external-helpers": "^7.14.5",
+    "@babel/preset-env": "^7.15.8",
+    "@rollup/plugin-babel": "^5.3.0",
     "babel-eslint": "^10.1.0",
     "eslint": "^7.12.1",
     "eslint-config-airbnb-base": "^14.2.0",
-    "eslint-config-prettier": "^6.15.0",
-    "eslint-plugin-import": "^2.22.1",
-    "jsdom": "^16.4.0",
-    "prettier": "^2.1.2",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.25.1",
+    "jsdom": "^18.0.0",
+    "prettier": "^2.4.1",
     "rollup": "^2.32.1",
     "tape": "5",
     "uglify-js": "3"
   },
   "dependencies": {
-    "d3-array": "2 || ^1.0.1",
-    "d3-interpolate": "2 || ^1.1.1",
+    "d3-array": "2 || 3 ||^1.0.1",
+    "d3-interpolate": "2 || 3 || ^1.1.1",
     "d3-interpolate-path": "2 || ^1.1.0",
-    "d3-selection": "2 || ^1.0.2",
-    "d3-shape": "2 || ^1.0.3",
-    "d3-transition": "2 || ^1.0.2"
+    "d3-selection": "2 || 3 || ^1.0.2",
+    "d3-shape": "2 || 3 || ^1.0.3",
+    "d3-transition": "2 || 3 ||^1.0.2"
   }
 }
