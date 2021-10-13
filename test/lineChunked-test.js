@@ -1,9 +1,9 @@
 /* eslint-disable */
-const tape = require('tape');
-const transition = require('d3-transition');
-const select = require('d3-selection').select;
-const jsdom = require('jsdom');
-const lineChunked = require('../').lineChunked;
+import tape from 'tape';
+import { transition } from 'd3-transition';
+import { select } from 'd3-selection';
+import jsdom from 'jsdom';
+import lineChunked from '../src/lineChunked.js';
 
 const definedLineClass = '.d3-line-chunked-defined';
 const undefinedLineClass = '.d3-line-chunked-undefined';
