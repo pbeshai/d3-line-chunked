@@ -14,7 +14,12 @@
     "svg"
   ],
   "license": "BSD-3-Clause",
-  "main": "build/d3-line-chunked.js",
+  "module": "./index.js",
+  "main": "./index.js",
+  "exports": {
+    "umd": "./build/d3-line-chunked.min.js",
+    "default": "./index.js"
+  },
   "jsnext:main": "index",
   "homepage": "https://github.com/pbeshai/d3-line-chunked",
   "repository": {
